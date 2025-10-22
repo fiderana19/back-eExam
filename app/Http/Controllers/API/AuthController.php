@@ -18,7 +18,6 @@ class AuthController extends Controller
             'email' => 'required|string|email|unique:utilisateurs,email',
             'matricule' => 'required|string|min:7',
             'password' => 'required|string|min:8',
-            'role' => 'required|in:etudiant,enseignant,admin',
             'id_groupe' => 'required',
         ]);
 
@@ -31,6 +30,7 @@ class AuthController extends Controller
         $validated = $validator->validated();
         $validated['password'] = Hash::make($validated['password']);
         $validated['est_valider'] = false;
+        $validated['role'] = 'etudiant';
 
         $utilisateur = Utilisateur::create($validated);
 

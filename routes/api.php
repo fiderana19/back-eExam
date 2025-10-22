@@ -10,6 +10,7 @@ use App\Http\Controllers\API\TentativeController;
 use App\Http\Controllers\API\ReponseController;
 use App\Http\Controllers\API\AnnonceController;
 use App\Http\Controllers\API\ResultatController;
+use App\Http\Controllers\API\GroupController;
 
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
@@ -92,6 +93,14 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/tentatives', [TentativeController::class, 'store']);
     Route::put('/tentatives/{id_tentative}', [TentativeController::class, 'update']);
     Route::get('/tentatives/test/{id_test}', [TentativeController::class, 'getByTest']);
+});
+
+Route::middleware('auth:api')->group(function () {
+    Route::post('/groupes', [GroupController::class, 'store']);
+    Route::get('/groupes', [GroupController::class, 'index']);
+    Route::get('/groupes/{id}', [GroupController::class, 'show']);
+    Route::put('/groupes/{id}', [GroupController::class, 'update']);
+    Route::delete('/groupes/{id}', [GroupController::class, 'destroy']);
 });
 
 Route::middleware('auth:api')->group(function () {
