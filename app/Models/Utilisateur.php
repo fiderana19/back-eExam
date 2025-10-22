@@ -14,6 +14,7 @@ class Utilisateur extends Authenticatable implements JWTSubject
     protected $primaryKey = 'id';
 
     protected $fillable = [
+        'id_groupe',
         'nom',
         'email',
         'matricule',
@@ -25,8 +26,8 @@ class Utilisateur extends Authenticatable implements JWTSubject
     protected $hidden = ['password'];
 
     // Relations
-    public function groupes() {
-        return $this->hasMany(Groupe::class, 'id_utilisateur');
+    public function groupe() {
+        return $this->belongsTo(Groupe::class, 'id_groupe');
     }
 
     public function annonces() {
@@ -50,10 +51,13 @@ class Utilisateur extends Authenticatable implements JWTSubject
         return $this->getKey();
     }
 
-    public function getJWTCustomClaims() {
-        return [];
+    public function getJWTCustomClaims()
+    {
+        return [
+            'id' => $this->getKey(),
+            'role' => $this->role,
+        ];
     }
-
     // Vérifie si l'utilisateur est approuvé
     public function isApproved()
     {

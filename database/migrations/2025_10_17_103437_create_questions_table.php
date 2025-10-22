@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('id_test')->constrained('tests')->onDelete('cascade');
             $table->text('texte_question');
-            $table->enum('type_question', ['qcm', 'developpement']);
+            $table->enum('type_question', ['qcm', 'reponse courte' , 'developpement']);
             $table->integer('points')->default(1);
             $table->text('reponse_correcte')->nullable(); // pour les questions ouvertes
             $table->timestamp('date_creation')->useCurrent();

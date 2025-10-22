@@ -23,11 +23,11 @@ class Resultat extends Model
 
     public function utilisateur()
     {
-        return $this->belongsTo(Utilisateur::class, 'id_utilisateur', 'id_utilisateur');
+        return $this->belongsTo(Utilisateur::class, 'id_utilisateur');
     }
 
     public function groupe()
     {
-        return $this->belongsTo(Groupe::class, 'id_groupe', 'id_groupe');
+        return $this->belongsTo(Groupe::class, 'id_groupe');
     }
 }

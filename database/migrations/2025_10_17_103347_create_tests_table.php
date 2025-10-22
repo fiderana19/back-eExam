@@ -18,10 +18,10 @@ return new class extends Migration
             $table->string('titre');
             $table->text('description')->nullable();
             $table->integer('duree_minutes');
-            $table->integer('max_questions');
-            $table->integer('note_max');
+            $table->integer('max_questions')->default(15);
+            $table->integer('note_max')->default(20);
             $table->timestamp('date_declechement')->nullable();
-            $table->enum('status', ['brouillon', 'actif', 'ferme'])->default('brouillon');
+            $table->enum('status', ['En attente', 'En cours', 'Terminé'])->default('En attente');
             $table->timestamps();
         });
     }

@@ -16,11 +16,10 @@ class Group extends Model
     protected $fillable = [
         'nom_groupe',
         'description',
-        'id_utilisateur'
     ];
 
-    public function createur()
+    public function utilisateurs()
     {
-        return $this->belongsTo(Utilisateur::class, 'id_utilisateur');
+        return $this->hasMany(Utilisateur::class, 'id_groupe');
     }
 }

@@ -17,7 +17,7 @@ class TestController extends Controller
     public function getByGroup($id_groupe)
     {
         $tests = Test::where('id_groupe', $id_groupe)
-            ->where('status', 'en_cours')
+            ->where('status', 'En cours')
             ->get();
 
         return response()->json($tests);

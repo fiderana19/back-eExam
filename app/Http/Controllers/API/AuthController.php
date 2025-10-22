@@ -19,6 +19,7 @@ class AuthController extends Controller
             'matricule' => 'required|string|min:7',
             'password' => 'required|string|min:8',
             'role' => 'required|in:etudiant,enseignant,admin',
+            'id_groupe' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -58,6 +59,15 @@ class AuthController extends Controller
             'token_type' => 'bearer',
             'utilisateur' => $user
         ]);
+    }
+
+    public function getById($id)
+    {
+        $user = Utilisateur::where('id_utilisateur', $id)
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json($user);
     }
 
     public function profile()

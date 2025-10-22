@@ -34,7 +34,6 @@ class ResultatController extends Controller
         }
 
         $resultat = Resultat::create([
-            'id_utilisateur' => $user->id_utilisateur,
             'id_groupe' => $request->id_groupe,
             'titre_resultat' => $request->titre_resultat,
             'fichier_resultat' => $path,

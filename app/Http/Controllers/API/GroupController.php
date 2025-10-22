@@ -14,7 +14,7 @@ class GroupController extends Controller
      */
     public function index()
     {
-        $groups = Group::with('createur')->get();
+        $groups = Group::get();
         return response()->json($groups);
     }
 
@@ -23,7 +23,7 @@ class GroupController extends Controller
      */
     public function show($id)
     {
-        $group = Group::with('createur')->find($id);
+        $group = Group::find($id);
 
         if (!$group) {
             return response()->json(['message' => 'Groupe introuvable'], 404);
@@ -45,7 +45,6 @@ class GroupController extends Controller
         $group = Group::create([
             'nom_groupe' => $request->nom_groupe,
             'description' => $request->description,
-            'id_utilisateur' => Auth::id(), // Créateur
         ]);
 
         return response()->json([
@@ -66,7 +65,7 @@ class GroupController extends Controller
         }
 
         // Vérifie les permissions
-        if (Auth::user()->role === 'enseignant' && $group->id_utilisateur !== Auth::id()) {
+        if (Auth::user()->role === 'enseignant') {
             return response()->json(['message' => 'Action non autorisée'], 403);
         }
 
@@ -90,7 +89,7 @@ class GroupController extends Controller
         }
 
         // Vérifie les permissions
-        if (Auth::user()->role === 'enseignant' && $group->id_utilisateur !== Auth::id()) {
+        if (Auth::user()->role === 'enseignant') {
             return response()->json(['message' => 'Action non autorisée'], 403);
         }
 
