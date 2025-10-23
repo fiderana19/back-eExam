@@ -95,10 +95,11 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/tentatives/test/{id_test}', [TentativeController::class, 'getByTest']);
 });
 
+Route::get('/groupes', [GroupController::class, 'index']);
+Route::get('/groupes/{group}', [GroupController::class, 'show']);
+
 Route::middleware('auth:api')->group(function () {
     Route::post('/groupes', [GroupController::class, 'store']);
-    Route::get('/groupes', [GroupController::class, 'index']);
-    Route::get('/groupes/{id}', [GroupController::class, 'show']);
     Route::put('/groupes/{id}', [GroupController::class, 'update']);
     Route::delete('/groupes/{id}', [GroupController::class, 'destroy']);
 });

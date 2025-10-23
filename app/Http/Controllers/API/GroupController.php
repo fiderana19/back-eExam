@@ -21,9 +21,9 @@ class GroupController extends Controller
     /**
      * Afficher un groupe par ID
      */
-    public function show($id)
+    public function show(Group $group)
     {
-        $group = Group::find($id);
+        // $group = Group::findOrFail($id);
 
         if (!$group) {
             return response()->json(['message' => 'Groupe introuvable'], 404);
