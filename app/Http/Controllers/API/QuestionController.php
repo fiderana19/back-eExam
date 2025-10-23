@@ -21,12 +21,18 @@ class QuestionController extends Controller
         }
 
         $validated = $request->validate([
-            'id_test' => 'required|exists:tests,id',
+            'id_test' => 'required|exists:tests,id_test',
             'texte_question' => 'required|string',
             'type_question' => 'required|string',
-            'points' => 'required|numeric|min:0',
-            'reponse_correcte' => 'nullable|string',
+            'reponse_correcte' => 'required|string',
         ]);
+
+        if($validated['type_question'] === 'developpement') {
+            $validated['points'] = 2;
+            $validated['reponse_correcte'] = null;
+        } else {
+            $validated['points'] = 1;
+        }
 
         $question = Question::create($validated);
 

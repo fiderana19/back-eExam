@@ -17,7 +17,7 @@ return new class extends Migration
             $table->text('texte_question');
             $table->enum('type_question', ['qcm', 'reponse courte' , 'developpement']);
             $table->integer('points')->default(1);
-            $table->text('reponse_correcte')->nullable(); // pour les questions ouvertes
+            $table->text('reponse_correcte')->nullable();
             $table->timestamp('date_creation')->useCurrent();
             $table->timestamps();
         });
