@@ -20,7 +20,7 @@ Route::prefix('auth')->group(function () {
         Route::get('profile', [AuthController::class, 'profile']);
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
-        Route::get('{id}', [AuthController::class, 'getById']);
+        Route::get('{user}', [AuthController::class, 'show']);
     });
 });
 
@@ -116,9 +116,9 @@ Route::middleware('auth:api')->group(function () {
 Route::middleware('auth:api')->group(function () {
     Route::post('/annonces', [AnnonceController::class, 'store']);
     Route::get('/annonces/groupe/{id_groupe}', [AnnonceController::class, 'getByGroupe']);
-    Route::get('/annonces/{id}', [AnnonceController::class, 'show']);
+    Route::get('/annonces/{annonce}', [AnnonceController::class, 'show']);
     Route::get('/annonces/groupe/{id_groupe}/dernieres', [AnnonceController::class, 'lastByGroupe']);
-    Route::get('/annonces/utilisateur/{id_utilisateur}/dernieres', [AnnonceController::class, 'lastByUser']);
+    Route::get('/annonces/utilisateur/{id_utilisateur}', [AnnonceController::class, 'lastByUser']);
     Route::put('/annonces/{id}', [AnnonceController::class, 'update']);
     Route::delete('/annonces/{id}', [AnnonceController::class, 'destroy']);
 });

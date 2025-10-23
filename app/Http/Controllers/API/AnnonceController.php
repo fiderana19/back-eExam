@@ -23,15 +23,15 @@ class AnnonceController extends Controller
 
         $request->validate([
             'id_groupe' => 'required|exists:groupes,id_groupe',
-            'titre' => 'required|string|max:255',
-            'contenu' => 'required|string',
+            'titre_annonce' => 'required|string|max:255',
+            'texte_annonce' => 'required|string',
         ]);
 
         $annonce = Annonce::create([
             'id_utilisateur' => $user->id_utilisateur,
             'id_groupe' => $request->id_groupe,
-            'titre' => $request->titre,
-            'contenu' => $request->contenu,
+            'titre_annonce' => $request->titre_annonce,
+            'texte_annonce' => $request->texte_annonce,
         ]);
 
         return response()->json([
@@ -55,11 +55,8 @@ class AnnonceController extends Controller
     /**
      * Récupérer une annonce par son ID
      */
-    public function show($id)
+    public function show(Annonce $annonce)
     {
-        $annonce = Annonce::with(['utilisateur:id_utilisateur,nom', 'groupe:id_groupe,nom_groupe'])
-            ->findOrFail($id);
-
         return response()->json($annonce);
     }
 
@@ -68,10 +65,10 @@ class AnnonceController extends Controller
      */
     public function lastByGroupe($id_groupe)
     {
-        $annonces = Annonce::where('id_groupe', $id_groupe)
+        $annonces = Annonce::where('id_groupe', $id_groupe)->with(['utilisateurs:id_utilisateur,nom', 'groupes:id_groupe,nom_groupe'])
             ->orderByDesc('created_at')
             ->take(3)
-            ->get();
+            ->get().compact('nom_groupe');
 
         return response()->json($annonces);
     }
@@ -83,7 +80,6 @@ class AnnonceController extends Controller
     {
         $annonces = Annonce::where('id_utilisateur', $id_utilisateur)
             ->orderByDesc('created_at')
-            ->take(3)
             ->get();
 
         return response()->json($annonces);
@@ -103,11 +99,11 @@ class AnnonceController extends Controller
         }
 
         $request->validate([
-            'titre' => 'sometimes|string|max:255',
-            'contenu' => 'sometimes|string',
+            'titre_annonce' => 'sometimes|string|max:255',
+            'texte_annonce' => 'sometimes|string',
         ]);
 
-        $annonce->update($request->only(['titre', 'contenu']));
+        $annonce->update($request->only(['titre_annonce', 'texte_annonce']));
 
         return response()->json([
             'message' => 'Annonce modifiée avec succès.',
@@ -124,7 +120,7 @@ class AnnonceController extends Controller
         $annonce = Annonce::findOrFail($id);
 
         // Seul le créateur ou admin peut supprimer
-        if ($user->id_utilisateur !== $annonce->id_utilisateur && $user->role !== 'admin') {
+        if ($user->id_utilisateur !== $annonce->id_utilisateur) {
             return response()->json(['message' => 'Accès refusé.'], 403);
         }
 

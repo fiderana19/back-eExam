@@ -11,7 +11,7 @@ class Utilisateur extends Authenticatable implements JWTSubject
     use HasFactory;
 
     protected $table = 'utilisateurs';
-    protected $primaryKey = 'id';
+    protected $primaryKey = 'id_utilisateur';
 
     protected $fillable = [
         'id_groupe',
@@ -56,6 +56,7 @@ class Utilisateur extends Authenticatable implements JWTSubject
         return [
             'id' => $this->getKey(),
             'role' => $this->role,
+            'id_groupe' => $this->id_groupe,
         ];
     }
     // Vérifie si l'utilisateur est approuvé

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Utilisateur;
+use App\Models\Group;
 use Illuminate\Support\Facades\Hash;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
@@ -30,7 +31,12 @@ class AuthController extends Controller
         $validated = $validator->validated();
         $validated['password'] = Hash::make($validated['password']);
         $validated['est_valider'] = false;
-        $validated['role'] = 'etudiant';
+        $group = Group::findOrFail($validated['id_groupe']);
+        if($group['nom_groupe'] === "ENSEIGNANT") {
+            $validated['role'] = 'enseignant';
+        } else {
+            $validated['role'] = 'etudiant';
+        }
 
         $utilisateur = Utilisateur::create($validated);
 
@@ -61,12 +67,8 @@ class AuthController extends Controller
         ]);
     }
 
-    public function getById($id)
+    public function show(Utilisateur $user)
     {
-        $user = Utilisateur::where('id_utilisateur', $id)
-            ->orderByDesc('created_at')
-            ->get();
-
         return response()->json($user);
     }
 

@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('options_qcm', function (Blueprint $table) {
-            $table->id();
+            $table->id('id_option');
             $table->foreignId('id_question')->constrained('questions')->onDelete('cascade');
             $table->text('texte_option');
             $table->boolean('est_correcte')->default(false);

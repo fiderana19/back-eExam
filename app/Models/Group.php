@@ -22,4 +22,9 @@ class Group extends Model
     {
         return $this->hasMany(Utilisateur::class, 'id_groupe');
     }
+
+    public function groups()
+    {
+        return $this->hasMany(Annonce::class, 'id_groupe');
+    }
 }

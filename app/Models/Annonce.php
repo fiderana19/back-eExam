@@ -11,9 +11,13 @@ class Annonce extends Model
 
     protected $table = 'annonces';
     protected $primaryKey = 'id_annonce';
-    protected $fillable = ['id_utilisateur', 'titre_annonce', 'texte_annonce', 'creation_annonce'];
+    protected $fillable = ['id_utilisateur', 'id_groupe' , 'titre_annonce', 'texte_annonce', 'creation_annonce'];
 
     public function utilisateur() {
         return $this->belongsTo(Utilisateur::class, 'id_utilisateur');
+    }
+
+    public function group() {
+        return $this->belongsTo(Group::class, 'id_groupe');
     }
 }

@@ -12,8 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('annonces', function (Blueprint $table) {
-            $table->id();
+            $table->id('id_annonce');
             $table->foreignId('id_utilisateur')->constrained('utilisateurs')->onDelete('cascade');
+            $table->foreignId('id_groupe')->constrained('groupes')->onDelete('cascade');
             $table->string('titre_annonce');
             $table->text('texte_annonce');
             $table->timestamp('creation_annonce')->useCurrent();

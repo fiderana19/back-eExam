@@ -14,7 +14,7 @@ class GroupController extends Controller
      */
     public function index()
     {
-        $groups = Group::all();
+        $groups = Group::where('nom_groupe', '!=', 'ADMIN')->get();
         return response()->json($groups);
     }
 
