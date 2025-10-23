@@ -37,7 +37,7 @@ Route::middleware(['auth:api'])->prefix('tests')->group(function () {
     Route::get('groupe/{id_groupe}', [TestController::class, 'getByGroup']);
 
     // Récupérer un test par son id
-    Route::get('{id}', [TestController::class, 'show']);
+    Route::get('{test}', [TestController::class, 'show']);
 
     // Récupérer les tests créés par un utilisateur
     Route::get('user/{id_utilisateur}', [TestController::class, 'getByUser']);

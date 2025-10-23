@@ -20,7 +20,7 @@ return new class extends Migration
             $table->integer('duree_minutes');
             $table->integer('max_questions')->default(15);
             $table->integer('note_max')->default(20);
-            $table->timestamp('date_declechement')->nullable();
+            $table->timestamp('date_declechement')->nullable()->default(null);
             $table->enum('status', ['En attente', 'En cours', 'Terminé'])->default('En attente');
             $table->timestamps();
         });

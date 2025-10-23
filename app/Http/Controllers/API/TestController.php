@@ -26,10 +26,8 @@ class TestController extends Controller
     /**
      * Récupérer un test par son id
      */
-    public function show($id)
+    public function show(Test $test)
     {
-        $test = Test::with(['groupe', 'utilisateur'])->find($id);
-
         if (!$test) {
             return response()->json(['message' => 'Test introuvable'], 404);
         }
@@ -175,10 +173,6 @@ class TestController extends Controller
             'titre' => 'required|string|max:255',
             'description' => 'nullable|string',
             'duree_minutes' => 'required|integer',
-            'max_questions' => 'required|integer',
-            'note_max' => 'required|numeric',
-            'date_declenchement' => 'nullable|date',
-            'status' => 'required|string',
         ]);
 
         $validated['id_utilisateur'] = $user->id_utilisateur;
@@ -212,9 +206,6 @@ class TestController extends Controller
             'titre' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
             'duree_minutes' => 'sometimes|integer',
-            'max_questions' => 'sometimes|integer',
-            'note_max' => 'sometimes|numeric',
-            'status' => 'sometimes|string',
         ]);
 
         $test->update($validated);
