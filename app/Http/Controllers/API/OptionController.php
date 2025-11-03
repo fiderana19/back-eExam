@@ -13,12 +13,19 @@ class OptionController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'id_question' => 'required|exists:question,id_question',
+            'id_question' => 'required|exists:questions,id_question',
             'texte_option' => 'required|string',
             'est_correcte' => 'required|boolean',
         ]);
 
         $option = OptionQcm::create($validated);
+        $question = Question::findOrFail($validated['id_question']);
+
+        if($option->est_correcte === true) {
+            $question->reponse_correcte = $validated['texte_option'];
+        }
+
+        $question->save();
 
         return response()->json([
             'message' => 'Option créée avec succès.',
@@ -31,14 +38,7 @@ class OptionController extends Controller
     {
         $options = OptionQcm::where('id_question', $id_question)->get();
 
-        if ($options->isEmpty()) {
-            return response()->json(['message' => 'Aucune option trouvée pour cette question.'], 404);
-        }
-
-        return response()->json([
-            'message' => 'Liste des options.',
-            'data' => $options
-        ]);
+        return response()->json($options);
     }
 
     // Supprimer une option

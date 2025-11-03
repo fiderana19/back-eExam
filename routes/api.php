@@ -63,7 +63,7 @@ Route::middleware(['auth:api'])->prefix('tests')->group(function () {
         Route::delete('{id}', [TestController::class, 'destroy']);
 
         // Modifier l’heure de déclenchement d’un test
-        Route::put('{id}/start-time', [TestController::class, 'updateStartTime']);
+        Route::put('/launch/{id}', [TestController::class, 'updateStartTime']);
     });
 });
 
@@ -71,7 +71,7 @@ Route::middleware(['auth:api'])->prefix('questions')->group(function () {
     // Lecture
     Route::get('/{question}', [QuestionController::class, 'show']);
     Route::get('/test/{id_test}', [QuestionController::class, 'getByTest']);
-    Route::get('/test/{id_test}/random', [QuestionController::class, 'randomByTest']);
+    Route::get('/test/random/{id_test}', [QuestionController::class, 'randomByTest']);
 
     // Écriture
     Route::middleware('role:enseignant,admin')->group(function () {

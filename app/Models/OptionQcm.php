@@ -9,7 +9,7 @@ class OptionQcm extends Model
 {
     use HasFactory;
 
-    protected $table = 'optionsqcm';
+    protected $table = 'options_qcm';
     protected $primaryKey = 'id_option';
 
     protected $fillable = [

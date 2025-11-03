@@ -199,10 +199,11 @@ class TestController extends Controller
             return response()->json(['message' => 'Non autorisé'], 403);
         }
 
-        $test->date_declenchement = Carbon::now();
+        $test->status = 'En cours';
+        $test->date_declechement = Carbon::now();
         $test->save();
 
-        return response()->json(['message' => 'Heure de déclenchement mise à jour']);
+        return response()->json(['message' => 'Heure de déclenchement mise à jour'], 200);
     }
 
     /**

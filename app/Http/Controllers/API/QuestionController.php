@@ -115,7 +115,7 @@ class QuestionController extends Controller
     {
         $test = Test::findOrFail($id_test);
 
-        $questions = Question::where('id_test', $id_test)->inRandomOrder()->get();
+        $questions = Question::with('options')->where('id_test', $id_test)->inRandomOrder()->get();
 
         $selectedQuestions = $questions->take($test->nombre_max_questions ?? count($questions));
 
@@ -128,10 +128,6 @@ class QuestionController extends Controller
                 });
         }
 
-        return response()->json([
-            'test_id' => $id_test,
-            'total_points' => $selectedQuestions->sum('points'),
-            'questions' => $selectedQuestions->values(),
-        ]);
+        return response()->json($selectedQuestions->values());
     }
 }
