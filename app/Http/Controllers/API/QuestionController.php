@@ -42,6 +42,14 @@ class QuestionController extends Controller
         ], 201);
     }
 
+    public function show(Question $question)
+    {
+        if (!$question) {
+            return response()->json(['message' => 'Question introuvable'], 404);
+        }
+    
+        return response()->json($question);
+    }
     /**
      * Modifier une question
      */
@@ -57,7 +65,6 @@ class QuestionController extends Controller
         $validated = $request->validate([
             'texte_question' => 'sometimes|string',
             'type_question' => 'sometimes|string',
-            'points' => 'sometimes|numeric|min:0',
             'reponse_correcte' => 'sometimes|string|nullable',
         ]);
 

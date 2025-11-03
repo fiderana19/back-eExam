@@ -69,6 +69,7 @@ Route::middleware(['auth:api'])->prefix('tests')->group(function () {
 
 Route::middleware(['auth:api'])->prefix('questions')->group(function () {
     // Lecture
+    Route::get('/{question}', [QuestionController::class, 'show']);
     Route::get('/test/{id_test}', [QuestionController::class, 'getByTest']);
     Route::get('/test/{id_test}/random', [QuestionController::class, 'randomByTest']);
 

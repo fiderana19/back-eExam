@@ -16,11 +16,28 @@ class TestController extends Controller
      */
     public function getByGroup($id_groupe)
     {
-        $tests = Test::where('id_groupe', $id_groupe)
+        $tests = Test::with('group')
+            ->where('id_groupe', $id_groupe)
             ->where('status', 'En cours')
             ->get();
 
-        return response()->json($tests);
+        $data = $tests->map(function ($test) {
+            return [
+                'id_test' => $test->id_test,
+                'nom_groupe' => $test->group->nom_groupe ?? 'Aucun groupe',
+                'id_utilisateur' => $test->id_utilisateur,
+                'id_groupe' => $test->id_groupe,
+                'titre' => $test->titre,
+                'description' => $test->description,
+                'duree_minutes' => $test->duree_minutes,
+                'max_questions' => $test->max_questions,
+                'note_max' => $test->note_max,
+                'date_declechement' => $test->date_declechement,
+                'status' => $test->status,
+                ];
+        });
+        
+        return response()->json($data);
     }
 
     /**
@@ -31,6 +48,20 @@ class TestController extends Controller
         if (!$test) {
             return response()->json(['message' => 'Test introuvable'], 404);
         }
+    
+        return response()->json([
+            'id_test' => $test->id_test,
+            'nom_groupe' => $test->group->nom_groupe ?? 'Aucun groupe',
+            'id_utilisateur' => $test->id_utilisateur,
+            'id_groupe' => $test->id_groupe,
+            'titre' => $test->titre,
+            'description' => $test->description,
+            'duree_minutes' => $test->duree_minutes,
+            'max_questions' => $test->max_questions,
+            'note_max' => $test->note_max,
+            'date_declechement' => $test->date_declechement,
+            'status' => $test->status,
+        ]);
 
         return response()->json($test);
     }
@@ -52,8 +83,25 @@ class TestController extends Controller
             return response()->json(['message' => 'Accès refusé'], 403);
         }
 
-        $tests = Test::where('id_utilisateur', $id_utilisateur)->get();
-        return response()->json($tests);
+        $tests = Test::with('group')->where('id_utilisateur', $id_utilisateur)->get();
+
+        $data = $tests->map(function ($test) {
+            return [
+                'id_test' => $test->id_test,
+                'nom_groupe' => $test->group->nom_groupe ?? 'Aucun groupe',
+                'id_utilisateur' => $test->id_utilisateur,
+                'id_groupe' => $test->id_groupe,
+                'titre' => $test->titre,
+                'description' => $test->description,
+                'duree_minutes' => $test->duree_minutes,
+                'max_questions' => $test->max_questions,
+                'note_max' => $test->note_max,
+                'date_declechement' => $test->date_declechement,
+                'status' => $test->status,
+                ];
+        });
+        
+        return response()->json($data);
     }
 
     /**

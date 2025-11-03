@@ -24,18 +24,18 @@ class Test extends Model
     ];
 
     public function createur() {
-        return $this->belongsTo(Utilisateur::class, 'id_utilisateur');
+        return $this->belongsTo(Utilisateur::class, 'id_utilisateur', 'id_utilisateur');
     }
 
-    public function groupe() {
-        return $this->belongsTo(Groupe::class, 'id_groupe');
+    public function group() {
+        return $this->belongsTo(Group::class, 'id_groupe', 'id_groupe');
     }
 
     public function questions() {
-        return $this->hasMany(Question::class, 'id_test');
+        return $this->hasMany(Question::class, 'id_question', 'id_question');
     }
 
     public function tentatives() {
-        return $this->hasMany(Tentative::class, 'id_test');
+        return $this->hasMany(Tentative::class, 'id_tentative', 'id_tentative');
     }
 }
