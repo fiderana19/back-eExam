@@ -32,24 +32,22 @@ Route::middleware(['auth:api', 'role:admin'])->prefix('admin')->group(function (
 });
 
 Route::middleware(['auth:api'])->prefix('tests')->group(function () {
-
+    Route::get('/all_corrected', [TestController::class, 'getCorrectedTest']);
+    Route::get('/all_corrected/admin', [TestController::class, 'getCorrectedTestByAdmin']);
+    Route::get('/results/{id_test}', [TestController::class, 'getTestsWithStats']);
     // Récupérer les tests en cours d’un groupe
     Route::get('groupe/{id_groupe}', [TestController::class, 'getByGroup']);
 
     // Récupérer un test par son id
     Route::get('{test}', [TestController::class, 'show']);
 
+    Route::put('/finish/{test}', [TestController::class, 'finish']);
+
     // Récupérer les tests créés par un utilisateur
     Route::get('user/{id_utilisateur}', [TestController::class, 'getByUser']);
 
     // Récupérer les tests avec des tentatives non notées
-    Route::get('tentatives/non-notees', [TestController::class, 'getTestsWithUnnotedAttempts']);
-
-    // Récupérer les tests complètement notés + statistiques
-    Route::get('tentatives/statistiques', [TestController::class, 'getTestsWithStats']);
-
-    // Récupérer les tests complètement notés par utilisateur
-    Route::get('tentatives/statistiques/{id_utilisateur}', [TestController::class, 'getTestsWithStats']);
+    Route::get('/need_correction/{id_utilisateur}', [TestController::class, 'getTestsWithUnnotedAttempts']);
 
     // Actions protégées (enseignant + admin)
     Route::middleware('role:enseignant,admin')->group(function () {
@@ -108,7 +106,7 @@ Route::middleware('auth:api')->group(function () {
 Route::middleware('auth:api')->group(function () {
     Route::post('/reponses', [ReponseController::class, 'store']);
     Route::put('/reponses/{id}/texte', [ReponseController::class, 'updateTexte']);
-    Route::put('/reponses/{id}/corriger', [ReponseController::class, 'corrigerReponse']);
+    Route::put('/reponses/corriger/{id}/', [ReponseController::class, 'corrigerReponse']);
     Route::get('/reponses/test/{id_test}', [ReponseController::class, 'getByTest']);
     Route::get('/reponses/{id}', [ReponseController::class, 'show']);
     Route::get('/reponses-non-corrigees', [ReponseController::class, 'getNonCorrigees']);
