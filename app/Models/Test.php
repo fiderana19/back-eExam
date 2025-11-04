@@ -32,10 +32,10 @@ class Test extends Model
     }
 
     public function questions() {
-        return $this->hasMany(Question::class, 'id_question', 'id_question');
+        return $this->hasMany(Question::class, 'id_test');
     }
 
     public function tentatives() {
-        return $this->hasMany(Tentative::class, 'id_tentative', 'id_tentative');
+        return $this->hasMany(Tentative::class, 'id_test');
     }
 }

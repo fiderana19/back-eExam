@@ -21,14 +21,14 @@ class Tentative extends Model
     ];
 
     public function utilisateur() {
-        return $this->belongsTo(Utilisateur::class, 'id_utilisateur');
+        return $this->belongsTo(Utilisateur::class, 'id_utilisateur', 'id_utilisateur');
     }
 
     public function test() {
-        return $this->belongsTo(Test::class, 'id_test');
+        return $this->belongsTo(Test::class, 'id_test', 'id_test');
     }
 
     public function reponses() {
-        return $this->hasMany(ReponseEtudiant::class, 'id_tentative');
+        return $this->hasMany(Reponse::class, 'id_tentative');
     }
 }
