@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id('id_tentative');
             $table->foreignId('id_utilisateur')->constrained('utilisateurs')->onDelete('cascade');
             $table->foreignId('id_test')->constrained('tests')->onDelete('cascade');
-            $table->timestamp('heure_debut')->useCurrent();
-            $table->timestamp('heure_soumission')->nullable();
+            $table->timestamp('heure_debut')->default(null);
+            $table->timestamp('heure_soumission')->nullable()->default(null);
             $table->float('note_obtenue')->default(0);
             $table->boolean('est_noter')->default(false);
             $table->timestamps();
