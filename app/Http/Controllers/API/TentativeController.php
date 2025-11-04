@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Tentative;
 use App\Models\Test;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class TentativeController extends Controller
 {
@@ -23,20 +24,16 @@ class TentativeController extends Controller
         }
 
         $validated = $request->validate([
-            'id_test' => 'required|exists:test,id_test',
-            'heure_debut' => 'required|date',
-            'heure_soumission' => 'nullable|date|after_or_equal:heure_debut',
+            'id_test' => 'required|exists:tests,id_test',
         ]);
-
+        
+        $validated['heure_debut'] = Carbon::now();
         $validated['id_utilisateur'] = $user->id_utilisateur;
         $validated['est_noter'] = false;
 
         $tentative = Tentative::create($validated);
 
-        return response()->json([
-            'message' => 'Tentative créée avec succès.',
-            'tentative' => $tentative
-        ], 201);
+        return response()->json($tentative, 201);
     }
 
     /**

@@ -4,8 +4,11 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Reponse;
+use App\Models\Question;
+use App\Models\Tentative;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 
 class ReponseController extends Controller
@@ -15,32 +18,73 @@ class ReponseController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'id_tentative' => 'required|exists:tentatives,id_tentative',
-            'id_question' => 'required|exists:questions,id_question',
-            'reponse_texte' => 'nullable|string',
-            'score_question' => 'nullable|numeric',
+        $validated = $request->validate([
+            'id_test' => 'required|string|exists:tests,id_test',
+            'id_tentative' => 'required|string|exists:tentatives,id_tentative',
+            'reponses' => 'required|array',
+            'reponses.*.id_tentative' => ['required', 'string', Rule::in([$request->id_tentative])],
+            'reponses.*.id_question' => 'required|string|exists:questions,id_question',
+            'reponses.*.reponse_texte' => 'nullable|string',
         ]);
 
         $user = Auth::user();
-
-        // Seuls les étudiants peuvent créer une réponse
         if ($user->role !== 'etudiant') {
             return response()->json(['message' => 'Accès refusé.'], 403);
         }
+    
+        $questionIds = collect($validated['reponses'])->pluck('id_question')->unique();
+        $questions = Question::whereIn('id_question', $questionIds)
+                          ->get()
+                          ->keyBy('id_question');
 
-        $reponse = Reponse::create([
-            'id_tentative' => $request->id_tentative,
-            'id_question' => $request->id_question,
-            'reponse_texte' => $request->reponse_texte,
-            'score_question' => $request->score_question ?? 0,
-            'est_corriger' => false,
-        ]);
+        DB::beginTransaction();
+        try {
+            $tentative = Tentative::findOrFail($validated['id_tentative']);
+            $tentative->heure_soumission = now();
+            $tentative->save();
+            
+            $responsesToInsert = [];
+                
+            foreach ($validated['reponses'] as $reponseData) {
+                $question = $questions->get($reponseData['id_question']);
+                $score_question = 0;
+                $est_corriger = 0;
+            
+                if ($question) {                
+                    if ($question->type_question !== 'developpement') {                    
+                        if ($reponseData['reponse_texte'] == $question->reponse_correcte) {                             
+                            $score_question = $question->points; 
+                        }
+                        $est_corriger = 1;
+                    }
+                }
+            
+                $responsesToInsert[] = [
+                    'id_tentative' => $reponseData['id_tentative'],
+                    'id_question' => $reponseData['id_question'],
+                    'reponse_texte' => $reponseData['reponse_texte'],
+                    'score_question' => $score_question,
+                    'est_corriger' => $est_corriger,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
 
-        return response()->json([
-            'message' => 'Réponse créée avec succès.',
-            'data' => $reponse,
-        ], 201);
+            Reponse::insert($responsesToInsert);
+
+            $noteTotale = Reponse::where('id_tentative', $tentative->id_tentative)
+                             ->sum('score_question');
+            $tentative->note_obtenue = $noteTotale;            
+            $tentative->save();
+        
+            DB::commit();
+
+            return response()->json($tentative->id, 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+                
+            return response()->json(['message' => $e], 500);
+        }
     }
 
     /**
@@ -76,28 +120,54 @@ class ReponseController extends Controller
     public function corrigerReponse(Request $request, $id)
     {
         $request->validate([
-            'score_question' => 'required|numeric',
+            'score_question' => 'required|numeric|min:0', // Ajout de min:0
         ]);
 
-        $reponse = Reponse::findOrFail($id);
+        $reponse = Reponse::with('tentative')->findOrFail($id);
         $user = Auth::user();
 
-        // Seuls admin ou enseignant peuvent corriger
         if (!in_array($user->role, ['admin', 'enseignant'])) {
             return response()->json(['message' => 'Accès refusé.'], 403);
         }
+        
+        if ($reponse->est_corriger) {
+            return response()->json(['message' => 'Cette réponse a déjà été corrigée.'], 409);
+        }
 
-        $reponse->update([
-            'score_question' => $request->score_question,
-            'est_corriger' => true,
-        ]);
+        DB::beginTransaction();
+        try {
+            $reponse->update([
+                'note_attribuee' => $request->score_question,
+                'est_corriger' => true,
+            ]);
+            $tentative = $reponse->tentative;
+            
+            $nouveauScoreTotal = $tentative->reponses()->sum('score_question');
 
-        return response()->json([
-            'message' => 'Réponse corrigée avec succès.',
-            'data' => $reponse,
-        ]);
+            $tentative->note_obtenue = $nouveauScoreTotal;
+            $tentative->save();
+            
+            $restantACorriger = $tentative->reponses()->where('est_corriger', false)->count();
+
+            if ($restantACorriger === 0) {
+                $tentative->est_noter = true;
+                $tentative->save();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Réponse corrigée et score de tentative mis à jour avec succès.',
+                'data' => $reponse,
+                'nouveau_score_tentative' => $tentative->note_obtenue,
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error("Erreur lors de la correction de la réponse : " . $e);
+            return response()->json(['message' => $e], 500);
+        }
     }
-
     /**
      * Récupérer les réponses liées à un test donné
      */
@@ -109,21 +179,16 @@ class ReponseController extends Controller
             return response()->json(['message' => 'Accès refusé.'], 403);
         }
 
-        $reponses = Reponse::select(
-                'reponses.id_reponse',
-                'reponses.id_tentative',
-                'reponses.id_question',
-                'reponses.reponse_texte',
-                'reponses.score_question',
-                'reponses.est_corriger',
-                'questions.texte_question',
-                'questions.points',
-                'tentatives.id_test'
-            )
-            ->join('tentatives', 'tentatives.id_tentative', '=', 'reponses.id_tentative')
-            ->join('questions', 'questions.id_question', '=', 'reponses.id_question')
-            ->where('tentatives.id_test', $id_test)
-            ->get();
+        $reponses = Reponse::whereHas('tentative', function ($queryTentative) use ($id_test) {
+            $queryTentative->where('id_test', $id_test);
+            
+        })
+        ->where('est_corriger', false)    
+        ->with([
+            'tentative', 
+            'question'
+        ])
+        ->get();
 
         return response()->json($reponses);
     }

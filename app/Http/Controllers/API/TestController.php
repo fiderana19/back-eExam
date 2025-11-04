@@ -8,6 +8,7 @@ use App\Models\Test;
 use App\Models\Tentative;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 
 class TestController extends Controller
 {
@@ -107,7 +108,7 @@ class TestController extends Controller
     /**
      * Tests avec tentatives non notées
      */
-    public function getTestsWithUnnotedAttempts()
+    public function getTestsWithUnnotedAttempts($id_utilisateur)
     {
         $user = auth()->user();
 
@@ -117,25 +118,30 @@ class TestController extends Controller
         ->when($user->role === 'enseignant', function ($q) use ($user) {
             $q->where('id_utilisateur', $user->id_utilisateur);
         })
+        ->where('status', 'Terminé')
         ->get();
-
+        
         return response()->json($tests);
     }
 
     /**
      * Tests dont toutes les tentatives sont notées + stats
      */
-    public function getTestsWithStats()
+    public function getTestsWithStats($id_test)
     {
         $user = auth()->user();
 
-        $tests = Test::whereDoesntHave('tentatives', function ($q) {
+        $tests = Test::where('id_test', $id_test)
+        ->whereDoesntHave('tentatives', function ($q) {
             $q->where('est_noter', false);
         })
-        ->when($user->role === 'enseignant', function ($q) use ($user) {
-            $q->where('id_utilisateur', $user->id_utilisateur);
-        })
-        ->with('tentatives')
+        ->with([
+            'tentatives' => function ($q) {
+                $q->where('est_noter', true)
+                  ->with('utilisateur'); 
+            },
+            'group'
+        ])
         ->get();
 
         $data = $tests->map(function ($test) {
@@ -146,15 +152,15 @@ class TestController extends Controller
 
             return [
                 'test' => $test,
-                'total_tentatives' => $total,
-                'superieur_ou_egal_moyenne' => $supMoyenne,
-                'inferieur_moyenne' => $infMoyenne,
+                'total' => $total,
+                'sup' => $supMoyenne,
+                'sous' => $infMoyenne,
             ];
         });
 
         return response()->json($data);
     }
-
+    
     /**
      * Supprimer un test
      */
@@ -195,15 +201,33 @@ class TestController extends Controller
             return response()->json(['message' => 'Accès refusé'], 403);
         }
 
-        if ($user->role === 'enseignant' && $test->id_utilisateur != $user->id_utilisateur) {
-            return response()->json(['message' => 'Non autorisé'], 403);
-        }
-
         $test->status = 'En cours';
         $test->date_declechement = Carbon::now();
         $test->save();
 
         return response()->json(['message' => 'Heure de déclenchement mise à jour'], 200);
+    }
+
+    /**
+     * Terminer le test
+     */
+    public function finish($id)
+    {
+        $test = Test::find($id);
+        $user = auth()->user();
+
+        if (!$test) {
+            return response()->json(['message' => 'Test introuvable'], 404);
+        }
+
+        if ($user->role === 'etudiant') {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        $test->status = 'Terminé';
+        $test->save();
+
+        return response()->json(['message' => 'Test terminé'], 200);
     }
 
     /**
@@ -260,5 +284,38 @@ class TestController extends Controller
         $test->update($validated);
 
         return response()->json(['message' => 'Test modifié avec succès', 'test' => $test]);
+    }
+
+    public function getCorrectedTestByAdmin()
+    {
+        $tests = Test::where('status', 'Terminé')
+        ->has('tentatives') 
+        ->whereDoesntHave('tentatives', function ($queryTentative) {
+            $queryTentative->where('est_noter', false);
+        })
+        ->with([
+            'group', 
+        ])
+        ->get();
+        
+        return response()->json($tests);
+    }
+
+    public function getCorrectedTest()
+    {
+        $user = auth()->user();
+
+        $tests = Test::where('id_utilisateur', $user->id_utilisateur)
+        ->where('status', 'Terminé')
+        ->has('tentatives') 
+        ->whereDoesntHave('tentatives', function ($queryTentative) {
+            $queryTentative->where('est_noter', false);
+        })
+        ->with([
+            'group', 
+        ])
+        ->get();
+        
+        return response()->json($tests);
     }
 }
