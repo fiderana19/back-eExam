@@ -11,14 +11,13 @@ class Resultat extends Model
 
     protected $table = 'resultats';
     protected $primaryKey = 'id_resultat';
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $fillable = [
         'id_utilisateur',
         'id_groupe',
         'titre_resultat',
         'fichier_resultat',
-        'date_publication',
     ];
 
     public function utilisateur()
@@ -28,6 +27,6 @@ class Resultat extends Model
 
     public function groupe()
     {
-        return $this->belongsTo(Groupe::class, 'id_groupe');
+        return $this->belongsTo(Group::class, 'id_groupe');
     }
 }

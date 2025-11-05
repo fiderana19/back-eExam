@@ -27,7 +27,7 @@ class Utilisateur extends Authenticatable implements JWTSubject
 
     // Relations
     public function groupe() {
-        return $this->belongsTo(Groupe::class, 'id_groupe');
+        return $this->belongsTo(Group::class, 'id_groupe', 'id_groupe');
     }
 
     public function annonces() {
