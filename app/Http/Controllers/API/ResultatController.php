@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ResultatController extends Controller
 {
@@ -109,10 +110,19 @@ class ResultatController extends Controller
     {
         $resultat = Resultat::find($id);
 
-        if (!$resultat || !$resultat->fichier_resultat) {
-            return response()->json(['message' => 'Fichier non trouvé.'], 404);
+        if (!$resultat) {
+            return response()->json(['message' => 'Résultat non trouvé.'], 404);
+        }
+        
+        $filePath = $resultat->fichier_resultat;
+
+        if (!$filePath || !Storage::disk('public')->exists($filePath)) {
+            return response()->json(['message' => 'Fichier introuvable sur le disque.'], 404);
         }
 
-        return response()->download(storage_path('app/public/' . $resultat->fichier_resultat));
+        return Storage::disk('public')->download(
+            $filePath,
+            basename($filePath) 
+        );
     }
 }

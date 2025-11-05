@@ -114,20 +114,27 @@ class QuestionController extends Controller
     public function randomByTest($id_test)
     {
         $test = Test::findOrFail($id_test);
+        $allQuestions = collect();
 
-        $questions = Question::with('options')->where('id_test', $id_test)->inRandomOrder()->get();
+        $quotas = [
+            'QCM' => 5,
+            'Réponse Courte' => 5,
+            'Développement' => 5,
+        ];
 
-        $selectedQuestions = $questions->take($test->nombre_max_questions ?? count($questions));
-
-        $totalPoints = $selectedQuestions->sum('points');
-        if ($test->points_max && $totalPoints > $test->points_max) {
-            $selectedQuestions = $selectedQuestions->sortByDesc('points')
-                ->takeWhile(function ($q) use (&$totalPoints, $test) {
-                    $totalPoints -= $q->points;
-                    return $totalPoints >= $test->points_max;
-                });
+        foreach ($quotas as $type => $limit) {            
+            $questionsByType = Question::with('options')
+                ->where('id_test', $id_test)
+                ->where('type_question', $type)
+                ->inRandomOrder()
+                ->take($limit)
+                ->get();
+                
+            $allQuestions = $allQuestions->merge($questionsByType);
         }
+        
+        $finalQuestions = $allQuestions->shuffle();
 
-        return response()->json($selectedQuestions->values());
-    }
+        return response()->json($finalQuestions->values());
+}
 }

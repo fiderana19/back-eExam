@@ -22,6 +22,16 @@ class TentativeController extends Controller
         if ($user->role !== 'etudiant') {
             return response()->json(['message' => 'Accès refusé. Seuls les étudiants peuvent créer une tentative.'], 403);
         }
+        
+        $tentativeExistante = Tentative::where('id_utilisateur', $user->id_utilisateur)
+                                    ->where('id_test', $request->id_test)
+                                    ->exists(); 
+
+        if ($tentativeExistante) {
+            return response()->json([
+                'message' => 'Tentative déjà enregistrée. Cet étudiant a déjà commencé ce test.'
+            ], 401);
+        }
 
         $validated = $request->validate([
             'id_test' => 'required|exists:tests,id_test',

@@ -52,7 +52,7 @@ class ReponseController extends Controller
             
                 if ($question) {                
                     if ($question->type_question !== 'developpement') {                    
-                        if ($reponseData['reponse_texte'] == $question->reponse_correcte) {                             
+                        if ($reponseData['reponse_texte'] === $question->reponse_correcte) {                             
                             $score_question = $question->points; 
                         }
                         $est_corriger = 1;
@@ -76,7 +76,14 @@ class ReponseController extends Controller
                              ->sum('score_question');
             $tentative->note_obtenue = $noteTotale;            
             $tentative->save();
-        
+                    
+            $restantACorriger = $tentative->reponses()->where('est_corriger', false)->count();
+
+            if ($restantACorriger === 0) {
+                $tentative->est_noter = true;
+                $tentative->save();
+            }
+            
             DB::commit();
 
             return response()->json($tentative->id, 200);
@@ -137,7 +144,7 @@ class ReponseController extends Controller
         DB::beginTransaction();
         try {
             $reponse->update([
-                'note_attribuee' => $request->score_question,
+                'score_question' => $request->score_question,
                 'est_corriger' => true,
             ]);
             $tentative = $reponse->tentative;
