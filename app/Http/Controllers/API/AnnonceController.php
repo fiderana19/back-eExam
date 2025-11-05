@@ -47,6 +47,7 @@ class AnnonceController extends Controller
     {
         $annonces = Annonce::where('id_groupe', $id_groupe)
             ->orderByDesc('created_at')
+            ->with(['group', 'utilisateur'])
             ->get();
 
         return response()->json($annonces);
@@ -80,6 +81,7 @@ class AnnonceController extends Controller
     {
         $annonces = Annonce::where('id_utilisateur', $id_utilisateur)
             ->orderByDesc('created_at')
+            ->with(['group', 'utilisateur'])
             ->get();
 
         return response()->json($annonces);

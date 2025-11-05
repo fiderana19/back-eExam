@@ -7,6 +7,7 @@ use App\Models\Resultat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 
 class ResultatController extends Controller
 {
@@ -27,23 +28,24 @@ class ResultatController extends Controller
             'fichier_resultat' => 'nullable|file|mimes:pdf,doc,docx',
         ]);
 
-        // Upload du fichier si présent
-        $path = null;
+         $path = null;
         if ($request->hasFile('fichier_resultat')) {
-            $path = $request->file('fichier_resultat')->store('resultats', 'public');
+            $file = $request->file('fichier_resultat');
+            $fileName = $file->getClientOriginalName();
+            $path = $file->storeAs(
+                'resultats', 
+                $fileName,
+                'public'
+            );
         }
 
         $resultat = Resultat::create([
             'id_groupe' => $request->id_groupe,
             'titre_resultat' => $request->titre_resultat,
             'fichier_resultat' => $path,
-            'date_publication' => now(),
         ]);
 
-        return response()->json([
-            'message' => 'Résultat créé avec succès.',
-            'resultat' => $resultat
-        ], 201);
+        return response()->json($resultat, 201);
     }
 
     /**
@@ -53,15 +55,10 @@ class ResultatController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role === 'etudiant') {
             $resultats = Resultat::where('id_groupe', $id_groupe)
-                ->where('id_utilisateur', $user->id_utilisateur)
                 ->get();
-        } else {
-            $resultats = Resultat::where('id_groupe', $id_groupe)->get();
-        }
 
-        return response()->json($resultats);
+                return response()->json($resultats);
     }
 
     /**
@@ -75,7 +72,7 @@ class ResultatController extends Controller
             return response()->json(['message' => 'Accès refusé.'], 403);
         }
 
-        $resultats = Resultat::with(['utilisateur', 'groupe'])->get();
+        $resultats = Resultat::with(['groupe'])->get();
         return response()->json($resultats);
     }
 
@@ -91,7 +88,7 @@ class ResultatController extends Controller
             return response()->json(['message' => 'Résultat introuvable.'], 404);
         }
 
-        if ($user->role !== 'admin' && $user->id_utilisateur !== $resultat->id_utilisateur) {
+        if ($user->role !== 'admin') {
             return response()->json(['message' => 'Accès refusé.'], 403);
         }
 
@@ -110,15 +107,10 @@ class ResultatController extends Controller
      */
     public function download($id)
     {
-        $user = Auth::user();
         $resultat = Resultat::find($id);
 
         if (!$resultat || !$resultat->fichier_resultat) {
             return response()->json(['message' => 'Fichier non trouvé.'], 404);
-        }
-
-        if ($user->role === 'etudiant' && $resultat->id_utilisateur !== $user->id_utilisateur) {
-            return response()->json(['message' => 'Accès refusé.'], 403);
         }
 
         return response()->download(storage_path('app/public/' . $resultat->fichier_resultat));

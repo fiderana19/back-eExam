@@ -93,4 +93,20 @@ class TentativeController extends Controller
 
         return response()->json($data);
     }
+
+    public function getTentativeById($id_tentative)
+    {
+        $tentative = Tentative::with([
+            'utilisateur', 
+            'test' => function ($queryTest) {
+                $queryTest->with('group');
+            },            
+            'reponses' => function ($queryReponses) {
+                $queryReponses->with('question');
+            }
+        ])
+        ->find($id_tentative);
+
+        return response()->json($tentative);
+    }
 }

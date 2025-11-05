@@ -53,6 +53,7 @@ class TestController extends Controller
         return response()->json([
             'id_test' => $test->id_test,
             'nom_groupe' => $test->group->nom_groupe ?? 'Aucun groupe',
+            'nom' => $test->createur->nom ?? 'Aucun utilisateur',
             'id_utilisateur' => $test->id_utilisateur,
             'id_groupe' => $test->id_groupe,
             'titre' => $test->titre,
@@ -63,8 +64,6 @@ class TestController extends Controller
             'date_declechement' => $test->date_declechement,
             'status' => $test->status,
         ]);
-
-        return response()->json($test);
     }
 
     /**

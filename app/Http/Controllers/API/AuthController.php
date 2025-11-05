@@ -18,7 +18,7 @@ class AuthController extends Controller
             'nom' => 'required|string|max:255',
             'email' => 'required|string|email|unique:utilisateurs,email',
             'matricule' => 'required|string|min:7',
-            'password' => 'required|string|min:8',
+            'password' => 'required|string|min:6',
             'id_groupe' => 'required',
         ]);
 
@@ -51,13 +51,13 @@ class AuthController extends Controller
         $credentials = $request->only('email', 'password');
 
         if (!$token = auth()->attempt($credentials)) {
-            return response()->json(['error' => 'Identifiants invalides.'], 401);
+            return response()->json(['message' => 'Identifiants invalides.'], 401);
         }
 
         $user = auth()->user();
 
         if (!$user->isApproved()) {
-            return response()->json(['message' => 'En attente de validation.'], 403);
+            return response()->json(['message' => 'Votre compte est toujours en attente de validation.'], 403);
         }
 
         return response()->json([
@@ -69,7 +69,15 @@ class AuthController extends Controller
 
     public function show(Utilisateur $user)
     {
-        return response()->json($user);
+        return response()->json([
+            'id_groupe' => $user->id_utilisateur,
+            'nom'  => $user->nom,
+            'email'  => $user->email,
+            'matricule'  => $user->matricule,
+            'role'  => $user->role,
+            'est_valider' => $user->est_valider,
+            'nom_groupe' => $user->groupe->nom_groupe ?? 'Aucun groupe',
+        ]);
     }
 
     public function profile()
