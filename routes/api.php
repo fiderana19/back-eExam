@@ -92,6 +92,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/tentatives', [TentativeController::class, 'store']);
     Route::put('/tentatives/{id_tentative}', [TentativeController::class, 'update']);
     Route::get('/tentatives/test/{id_test}', [TentativeController::class, 'getByTest']);
+    Route::get('/tentatives/responses/{id_test}', [TentativeController::class, 'getTentativeById']);
 });
 
 Route::get('/groupes', [GroupController::class, 'index']);
@@ -125,12 +126,10 @@ Route::middleware('auth:api')->group(function () {
 Route::middleware('auth:api')->prefix('resultats')->group(function () {
 
     // Récupérer tous les résultats (admin uniquement)
-    Route::get('/', [ResultatController::class, 'index'])->middleware('role:admin');
+    Route::get('/', [ResultatController::class, 'getAll'])->middleware('role:admin');
 
     // Récupérer les résultats d’un groupe (enseignant + admin)
-    Route::get('/groupe/{id_groupe}', [ResultatController::class, 'getByGroupe'])
-        ->middleware('role:enseignant,admin');
-
+    Route::get('/groupe/{id_groupe}', [ResultatController::class, 'getByGroupe']);
     // Créer un résultat (enseignant + admin)
     Route::post('/', [ResultatController::class, 'store'])
         ->middleware('role:enseignant,admin');
@@ -140,5 +139,5 @@ Route::middleware('auth:api')->prefix('resultats')->group(function () {
         ->middleware('role:admin');
 
     // Télécharger un fichier résultat (tous les rôles)
-    Route::get('/{id}/download', [ResultatController::class, 'download']);
+    Route::get('/download/{id}', [ResultatController::class, 'download']);
 });
