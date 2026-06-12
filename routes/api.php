@@ -12,132 +12,193 @@ use App\Http\Controllers\API\AnnonceController;
 use App\Http\Controllers\API\ResultatController;
 use App\Http\Controllers\API\GroupController;
 
-Route::prefix('auth')->group(function () {
-    Route::post('register', [AuthController::class, 'register']);
-    Route::post('login', [AuthController::class, 'login']);
+// ════════════════════════════════════════════════════════════════
+// AUTHENTIFICATION
+// Prefix: /api/auth
+// ════════════════════════════════════════════════════════════════
+Route::prefix('auth')->controller(AuthController::class)->group(function () {
 
+    // Routes publiques
+    Route::post('register', 'register')                ->name('auth.register');
+    Route::post('login', 'login')                      ->name('auth.login');
+
+    // Routes protégées — utilisateur connecté
     Route::middleware('auth:api')->group(function () {
-        Route::get('profile', [AuthController::class, 'profile']);
-        Route::post('logout', [AuthController::class, 'logout']);
-        Route::post('refresh', [AuthController::class, 'refresh']);
-        Route::get('{user}', [AuthController::class, 'show']);
+        Route::get('profile', 'profile')               ->name('auth.profile');
+        Route::post('logout', 'logout')                ->name('auth.logout');
+        Route::post('refresh', 'refresh')              ->name('auth.refresh');
+        Route::get('{user}', 'show')                   ->name('auth.show');
     });
 });
 
-Route::middleware(['auth:api', 'role:admin'])->prefix('admin')->group(function () {
-    Route::get('users/pending', [AdminController::class, 'pendingUsers']);
-    Route::post('users/approve/{id_utilisateur}', [AdminController::class, 'approveUser']);
-    Route::post('users/block/{id_utilisateur}', [AdminController::class, 'blockUser']);
-    Route::get('users', [AdminController::class, 'allUsers']);
+// ════════════════════════════════════════════════════════════════
+// ADMINISTRATION
+// Prefix: /api/admin — Middleware: auth:api, role:admin
+// ════════════════════════════════════════════════════════════════
+Route::middleware(['auth:api', 'role:admin'])->prefix('admin')
+    ->controller(AdminController::class)->group(function () {
+
+    Route::get('users', 'allUsers')                    ->name('admin.users.all');
+    Route::get('users/pending', 'pendingUsers')        ->name('admin.users.pending');
+    Route::post('users/approve/{id_utilisateur}', 'approveUser')
+        ->name('admin.users.approve');
+    Route::post('users/block/{id_utilisateur}', 'blockUser')
+        ->name('admin.users.block');
 });
 
-Route::middleware(['auth:api'])->prefix('tests')->group(function () {
-    Route::get('/all_corrected', [TestController::class, 'getCorrectedTest']);
-    Route::get('/all_corrected/admin', [TestController::class, 'getCorrectedTestByAdmin']);
-    Route::get('/results/{id_test}', [TestController::class, 'getTestsWithStats']);
-    // Récupérer les tests en cours d’un groupe
-    Route::get('groupe/{id_groupe}', [TestController::class, 'getByGroup']);
+// ════════════════════════════════════════════════════════════════
+// TESTS
+// Prefix: /api/tests — Middleware: auth:api
+// ════════════════════════════════════════════════════════════════
+Route::middleware(['auth:api'])->prefix('tests')
+    ->controller(TestController::class)->group(function () {
 
-    // Récupérer un test par son id
-    Route::get('{test}', [TestController::class, 'show']);
+    // Consultation — tous les rôles connectés
+    Route::get('{test}', 'show')                       ->name('tests.show');
+    Route::get('groupe/{id_groupe}', 'getByGroup')     ->name('tests.byGroup');
+    Route::get('user/{id_utilisateur}', 'getByUser')   ->name('tests.byUser');
+    Route::get('/all_corrected', 'getCorrectedTest')   ->name('tests.allCorrected');
+    Route::get('/all_corrected/admin', 'getCorrectedTestByAdmin')
+        ->name('tests.allCorrectedAdmin');
+    Route::get('/results/{id_test}', 'getTestsWithStats')
+        ->name('tests.results');
+    Route::get('/need_correction/{id_utilisateur}', 'getTestsWithUnnotedAttempts')
+        ->name('tests.needCorrection');
+    Route::put('/finish/{test}', 'finish')              ->name('tests.finish');
 
-    Route::put('/finish/{test}', [TestController::class, 'finish']);
-
-    // Récupérer les tests créés par un utilisateur
-    Route::get('user/{id_utilisateur}', [TestController::class, 'getByUser']);
-
-    // Récupérer les tests avec des tentatives non notées
-    Route::get('/need_correction/{id_utilisateur}', [TestController::class, 'getTestsWithUnnotedAttempts']);
-
-    // Actions protégées (enseignant + admin)
+    // Gestion — enseignant + admin uniquement
     Route::middleware('role:enseignant,admin')->group(function () {
-        // Créer un test
-        Route::post('/', [TestController::class, 'store']);
-
-        // Modifier un test
-        Route::put('{id}', [TestController::class, 'update']);
-
-        // Supprimer un test
-        Route::delete('{id}', [TestController::class, 'destroy']);
-
-        // Modifier l’heure de déclenchement d’un test
-        Route::put('/launch/{id}', [TestController::class, 'updateStartTime']);
+        Route::post('/', 'store')                       ->name('tests.store');
+        Route::put('{id}', 'update')                    ->name('tests.update');
+        Route::put('/launch/{id}', 'updateStartTime')   ->name('tests.updateStartTime');
+        Route::delete('{id}', 'destroy')                ->name('tests.destroy');
     });
 });
 
-Route::middleware(['auth:api'])->prefix('questions')->group(function () {
-    // Lecture
-    Route::get('/{question}', [QuestionController::class, 'show']);
-    Route::get('/test/{id_test}', [QuestionController::class, 'getByTest']);
-    Route::get('/test/random/{id_test}', [QuestionController::class, 'randomByTest']);
+// ════════════════════════════════════════════════════════════════
+// QUESTIONS
+// Prefix: /api/questions — Middleware: auth:api
+// ════════════════════════════════════════════════════════════════
+Route::middleware(['auth:api'])->prefix('questions')
+    ->controller(QuestionController::class)->group(function () {
 
-    // Écriture
+    // Consultation — tous les rôles connectés
+    Route::get('/{question}', 'show')                  ->name('questions.show');
+    Route::get('/test/{id_test}', 'getByTest')         ->name('questions.byTest');
+    Route::get('/test/random/{id_test}', 'randomByTest')
+        ->name('questions.randomByTest');
+
+    // Gestion — enseignant + admin uniquement
     Route::middleware('role:enseignant,admin')->group(function () {
-        Route::post('/', [QuestionController::class, 'store']);
-        Route::put('/{id}', [QuestionController::class, 'update']);
-        Route::delete('/{id}', [QuestionController::class, 'destroy']); 
+        Route::post('/', 'store')                       ->name('questions.store');
+        Route::put('/{id}', 'update')                   ->name('questions.update');
+        Route::delete('/{id}', 'destroy')               ->name('questions.destroy');
     });
 });
 
-Route::middleware(['auth:api'])->prefix('options')->group(function () {
-    Route::get('/question/{id_question}', [OptionController::class, 'getByQuestion']);
+// ════════════════════════════════════════════════════════════════
+// OPTIONS
+// Prefix: /api/options — Middleware: auth:api
+// ════════════════════════════════════════════════════════════════
+Route::middleware(['auth:api'])->prefix('options')
+    ->controller(OptionController::class)->group(function () {
 
+    // Consultation — tous les rôles connectés
+    Route::get('/question/{id_question}', 'getByQuestion')
+        ->name('options.byQuestion');
+
+    // Gestion — enseignant + admin uniquement
     Route::middleware('role:enseignant,admin')->group(function () {
-        Route::post('/', [OptionController::class, 'store']);       
-        Route::delete('/{id}', [OptionController::class, 'destroy']);  
+        Route::post('/', 'store')                       ->name('options.store');
+        Route::delete('/{id}', 'destroy')               ->name('options.destroy');
     });
 });
 
-Route::middleware('auth:api')->group(function () {
-    Route::post('/tentatives', [TentativeController::class, 'store']);
-    Route::put('/tentatives/{id_tentative}', [TentativeController::class, 'update']);
-    Route::get('/tentatives/test/{id_test}', [TentativeController::class, 'getByTest']);
-    Route::get('/tentatives/responses/{id_test}', [TentativeController::class, 'getTentativeById']);
+// ════════════════════════════════════════════════════════════════
+// TENTATIVES
+// Prefix: /api/tentatives — Middleware: auth:api
+// ════════════════════════════════════════════════════════════════
+Route::middleware('auth:api')->prefix('tentatives')
+    ->controller(TentativeController::class)->group(function () {
+
+    Route::post('/', 'store')                            ->name('tentatives.store');
+    Route::put('/{id_tentative}', 'update')              ->name('tentatives.update');
+    Route::get('/test/{id_test}', 'getByTest')           ->name('tentatives.byTest');
+    Route::get('/responses/{id_test}', 'getTentativeById')
+        ->name('tentatives.responses');
 });
 
-Route::get('/groupes', [GroupController::class, 'index']);
-Route::get('/groupes/{group}', [GroupController::class, 'show']);
+// ════════════════════════════════════════════════════════════════
+// GROUPES
+// Prefix: /api/groupes
+// ════════════════════════════════════════════════════════════════
+Route::prefix('groupes')->controller(GroupController::class)->group(function () {
 
-Route::middleware('auth:api')->group(function () {
-    Route::post('/groupes', [GroupController::class, 'store']);
-    Route::put('/groupes/{id}', [GroupController::class, 'update']);
-    Route::delete('/groupes/{id}', [GroupController::class, 'destroy']);
+    // Consultation publique
+    Route::get('/', 'index')                             ->name('groupes.index');
+    Route::get('/{group}', 'show')                       ->name('groupes.show');
+
+    // Gestion — utilisateur connecté
+    Route::middleware('auth:api')->group(function () {
+        Route::post('/', 'store')                        ->name('groupes.store');
+        Route::put('/{id}', 'update')                    ->name('groupes.update');
+        Route::delete('/{id}', 'destroy')                ->name('groupes.destroy');
+    });
 });
 
-Route::middleware('auth:api')->group(function () {
-    Route::post('/reponses', [ReponseController::class, 'store']);
-    Route::put('/reponses/{id}/texte', [ReponseController::class, 'updateTexte']);
-    Route::put('/reponses/corriger/{id}/', [ReponseController::class, 'corrigerReponse']);
-    Route::get('/reponses/test/{id_test}', [ReponseController::class, 'getByTest']);
-    Route::get('/reponses/{id}', [ReponseController::class, 'show']);
-    Route::get('/reponses-non-corrigees', [ReponseController::class, 'getNonCorrigees']);
+// ════════════════════════════════════════════════════════════════
+// REPONSES
+// Prefix: /api/reponses — Middleware: auth:api
+// ════════════════════════════════════════════════════════════════
+Route::middleware('auth:api')->prefix('reponses')
+    ->controller(ReponseController::class)->group(function () {
+
+    Route::post('/', 'store')                            ->name('reponses.store');
+    Route::put('/{id}/texte', 'updateTexte')             ->name('reponses.updateTexte');
+    Route::put('/corriger/{id}/', 'corrigerReponse')     ->name('reponses.corriger');
+    Route::get('/non-corrigees', 'getNonCorrigees')      ->name('reponses.nonCorrigees');
+    Route::get('/test/{id_test}', 'getByTest')           ->name('reponses.byTest');
+    Route::get('/{id}', 'show')                          ->name('reponses.show');
 });
 
-Route::middleware('auth:api')->group(function () {
-    Route::post('/annonces', [AnnonceController::class, 'store']);
-    Route::get('/annonces/groupe/{id_groupe}', [AnnonceController::class, 'getByGroupe']);
-    Route::get('/annonces/{annonce}', [AnnonceController::class, 'show']);
-    Route::get('/annonces/groupe/{id_groupe}/dernieres', [AnnonceController::class, 'lastByGroupe']);
-    Route::get('/annonces/utilisateur/{id_utilisateur}', [AnnonceController::class, 'lastByUser']);
-    Route::put('/annonces/{id}', [AnnonceController::class, 'update']);
-    Route::delete('/annonces/{id}', [AnnonceController::class, 'destroy']);
+// ════════════════════════════════════════════════════════════════
+// ANNONCES
+// Prefix: /api/annonces — Middleware: auth:api
+// ════════════════════════════════════════════════════════════════
+Route::middleware('auth:api')->prefix('annonces')
+    ->controller(AnnonceController::class)->group(function () {
+
+    Route::post('/', 'store')                            ->name('annonces.store');
+    Route::get('/{annonce}', 'show')                     ->name('annonces.show');
+    Route::get('/groupe/{id_groupe}', 'getByGroupe')     ->name('annonces.byGroup');
+    Route::get('/groupe/{id_groupe}/dernieres', 'lastByGroupe')
+        ->name('annonces.lastByGroup');
+    Route::get('/utilisateur/{id_utilisateur}', 'lastByUser')
+        ->name('annonces.lastByUser');
+    Route::put('/{id}', 'update')                        ->name('annonces.update');
+    Route::delete('/{id}', 'destroy')                    ->name('annonces.destroy');
 });
 
-Route::middleware('auth:api')->prefix('resultats')->group(function () {
+// ════════════════════════════════════════════════════════════════
+// RESULTATS
+// Prefix: /api/resultats — Middleware: auth:api
+// ════════════════════════════════════════════════════════════════
+Route::middleware('auth:api')->prefix('resultats')
+    ->controller(ResultatController::class)->group(function () {
 
-    // Récupérer tous les résultats (admin uniquement)
-    Route::get('/', [ResultatController::class, 'getAll'])->middleware('role:admin');
+    // Téléchargement — tous les rôles connectés
+    Route::get('/download/{id}', 'download')             ->name('resultats.download');
 
-    // Récupérer les résultats d’un groupe (enseignant + admin)
-    Route::get('/groupe/{id_groupe}', [ResultatController::class, 'getByGroupe']);
-    // Créer un résultat (enseignant + admin)
-    Route::post('/', [ResultatController::class, 'store'])
+    // Consultation — résultats d'un groupe (enseignant + admin)
+    Route::get('/groupe/{id_groupe}', 'getByGroupe')     ->name('resultats.byGroup');
+
+    // Création — enseignant + admin
+    Route::post('/', 'store')                            ->name('resultats.store')
         ->middleware('role:enseignant,admin');
 
-    // Supprimer un résultat (admin uniquement)
-    Route::delete('/{id}', [ResultatController::class, 'destroy'])
+    // Admin uniquement
+    Route::get('/', 'getAll')                            ->name('resultats.all')
         ->middleware('role:admin');
-
-    // Télécharger un fichier résultat (tous les rôles)
-    Route::get('/download/{id}', [ResultatController::class, 'download']);
+    Route::delete('/{id}', 'destroy')                    ->name('resultats.destroy')
+        ->middleware('role:admin');
 });
