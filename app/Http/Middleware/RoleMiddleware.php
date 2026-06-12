@@ -11,7 +11,7 @@ class RoleMiddleware
     {
         $user = auth()->user();
 
-        if (!$user || !in_array($user->role, $roles)) {
+        if (!$user || !in_array($user->role?->value, $roles)) {
             return response()->json(['error' => 'Accès refusé.'], 403);
         }
 

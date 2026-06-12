@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TestStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
@@ -24,6 +25,13 @@ class Test extends Model
         'date_declechement',
         'status',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'status' => TestStatus::class,
+        ];
+    }
 
     // ─── Relations ────────────────────────────────────────────────
 
@@ -66,14 +74,14 @@ class Test extends Model
 
     public function launch(): void
     {
-        $this->status = 'En cours';
+        $this->status = TestStatus::EnCours;
         $this->date_declechement = Carbon::now();
         $this->save();
     }
 
     public function finish(): void
     {
-        $this->status = 'Terminé';
+        $this->status = TestStatus::Termine;
         $this->save();
     }
 
@@ -99,12 +107,12 @@ class Test extends Model
 
     public function scopePending(Builder $query): void
     {
-        $query->where('status', 'En cours');
+        $query->where('status', TestStatus::EnCours->value);
     }
 
     public function scopeCompleted(Builder $query): void
     {
-        $query->where('status', 'Terminé');
+        $query->where('status', TestStatus::Termine->value);
     }
 
     public function scopeCorrected(Builder $query): void

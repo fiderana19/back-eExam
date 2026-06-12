@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Enums\QuestionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\API\StoreQuestionRequest;
 use App\Http\Requests\API\UpdateQuestionRequest;
@@ -79,9 +80,9 @@ class QuestionController extends Controller
     public function randomByTest(int $id_test): JsonResponse
     {
         $quotas = [
-            'QCM' => 5,
-            'Réponse Courte' => 5,
-            'Développement' => 5,
+            QuestionType::Qcm->value => 5,
+            QuestionType::ReponseCourte->value => 5,
+            QuestionType::Developpement->value => 5,
         ];
 
         $questions = collect();

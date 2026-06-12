@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UserRole;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -25,6 +26,14 @@ class Utilisateur extends Authenticatable implements JWTSubject
     ];
 
     protected $hidden = ['password'];
+
+    protected function casts(): array
+    {
+        return [
+            'role' => UserRole::class,
+            'est_valider' => 'boolean',
+        ];
+    }
 
     // ─── Relations ────────────────────────────────────────────────
 
@@ -52,22 +61,22 @@ class Utilisateur extends Authenticatable implements JWTSubject
 
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return $this->role === UserRole::Admin;
     }
 
     public function isEnseignant(): bool
     {
-        return $this->role === 'enseignant';
+        return $this->role === UserRole::Enseignant;
     }
 
     public function isEtudiant(): bool
     {
-        return $this->role === 'etudiant';
+        return $this->role === UserRole::Etudiant;
     }
 
     public function isInRole(array $roles): bool
     {
-        return in_array($this->role, $roles, true);
+        return in_array($this->role?->value, $roles, true);
     }
 
     // ─── Statut du compte ─────────────────────────────────────────
@@ -102,12 +111,12 @@ class Utilisateur extends Authenticatable implements JWTSubject
     public function scopePending(Builder $query): void
     {
         $query->where('est_valider', false)
-              ->whereIn('role', ['etudiant', 'enseignant']);
+              ->whereIn('role', [UserRole::Etudiant->value, UserRole::Enseignant->value]);
     }
 
     public function scopeNonAdmin(Builder $query): void
     {
-        $query->where('role', '!=', 'admin');
+        $query->where('role', '!=', UserRole::Admin->value);
     }
 
     // ─── JWT ──────────────────────────────────────────────────────
@@ -121,7 +130,7 @@ class Utilisateur extends Authenticatable implements JWTSubject
     {
         return [
             'id' => $this->getKey(),
-            'role' => $this->role,
+            'role' => $this->role?->value,
             'id_groupe' => $this->id_groupe,
         ];
     }
