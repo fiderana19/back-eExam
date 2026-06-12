@@ -19,15 +19,42 @@ class Question extends Model
         'reponse_correcte',
     ];
 
-    public function test() {
+    // ─── Relations ────────────────────────────────────────────────
+
+    public function test()
+    {
         return $this->belongsTo(Test::class, 'id_test');
     }
 
-    public function options() {
+    public function options()
+    {
         return $this->hasMany(OptionQcm::class, 'id_question');
     }
 
-    public function reponsesEtudiants() {
-        return $this->hasMany(ReponseEtudiant::class, 'id_question');
+    // ─── Types ────────────────────────────────────────────────────
+
+    public function isDeveloppement(): bool
+    {
+        return $this->type_question === 'developpement';
+    }
+
+    public function isQcm(): bool
+    {
+        return $this->type_question === 'QCM';
+    }
+
+    public function isReponseCourte(): bool
+    {
+        return $this->type_question === 'Réponse Courte';
+    }
+
+    // ─── Logique métier ───────────────────────────────────────────
+
+    public function configurePoints(): void
+    {
+        $this->points = $this->isDeveloppement() ? 2 : 1;
+        if ($this->isDeveloppement()) {
+            $this->reponse_correcte = null;
+        }
     }
 }

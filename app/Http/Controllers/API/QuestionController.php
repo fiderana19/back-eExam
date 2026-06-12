@@ -3,89 +3,59 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Requests\API\StoreQuestionRequest;
+use App\Http\Requests\API\UpdateQuestionRequest;
 use App\Models\Question;
-use App\Models\Test;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\JsonResponse;
 
 class QuestionController extends Controller
 {
     /**
-     * Créer une nouvelle question
+     * Créer une question.
+     *
+     * Configure automatiquement les points selon le type :
+     * développement (2pts) ou QCM/Réponse Courte (1pt).
      */
-    public function store(Request $request)
+    public function store(StoreQuestionRequest $request): JsonResponse
     {
-        $user = Auth::user();
-        if (!in_array($user->role, ['admin', 'enseignant'])) {
-            return response()->json(['message' => 'Accès refusé.'], 403);
-        }
-
-        $validated = $request->validate([
-            'id_test' => 'required|exists:tests,id_test',
-            'texte_question' => 'required|string',
-            'type_question' => 'required|string',
-            'reponse_correcte' => 'required|string',
-        ]);
-
-        if($validated['type_question'] === 'developpement') {
-            $validated['points'] = 2;
-            $validated['reponse_correcte'] = null;
-        } else {
-            $validated['points'] = 1;
-        }
-
-        $question = Question::create($validated);
+        $data = $request->validated();
+        $question = new Question($data);
+        $question->configurePoints();
+        $question->save();
 
         return response()->json([
             'message' => 'Question créée avec succès.',
-            'question' => $question
+            'question' => $question,
         ], 201);
     }
 
-    public function show(Question $question)
+    /**
+     * Détail d'une question.
+     */
+    public function show(Question $question): JsonResponse
     {
-        if (!$question) {
-            return response()->json(['message' => 'Question introuvable'], 404);
-        }
-    
         return response()->json($question);
     }
+
     /**
-     * Modifier une question
+     * Modifier une question.
      */
-    public function update(Request $request, $id_question)
+    public function update(UpdateQuestionRequest $request, int $id_question): JsonResponse
     {
-        $user = Auth::user();
-        if (!in_array($user->role, ['admin', 'enseignant'])) {
-            return response()->json(['message' => 'Accès refusé.'], 403);
-        }
-
         $question = Question::findOrFail($id_question);
-
-        $validated = $request->validate([
-            'texte_question' => 'sometimes|string',
-            'type_question' => 'sometimes|string',
-            'reponse_correcte' => 'sometimes|string|nullable',
-        ]);
-
-        $question->update($validated);
+        $question->update($request->validated());
 
         return response()->json([
             'message' => 'Question modifiée avec succès.',
-            'question' => $question
+            'question' => $question,
         ]);
     }
 
     /**
-     * Supprimer une question
+     * Supprimer une question.
      */
-    public function destroy($id_question)
+    public function destroy(int $id_question): JsonResponse
     {
-        $user = Auth::user();
-        if (!in_array($user->role, ['admin', 'enseignant'])) {
-            return response()->json(['message' => 'Accès refusé.'], 403);
-        }
-
         $question = Question::findOrFail($id_question);
         $question->delete();
 
@@ -93,48 +63,40 @@ class QuestionController extends Controller
     }
 
     /**
-     * Récupérer toutes les questions d’un test
+     * Toutes les questions d'un test.
      */
-    public function getByTest($id_test)
+    public function getByTest(int $id_test): JsonResponse
     {
-        $user = Auth::user();
-        if (!in_array($user->role, ['admin', 'enseignant'])) {
-            return response()->json(['message' => 'Accès refusé.'], 403);
-        }
-
         $questions = Question::where('id_test', $id_test)->get();
-
         return response()->json($questions);
     }
 
     /**
-     * Récupérer des questions aléatoires pour un test
-     * Accessible par tout le monde
+     * Questions aléatoires pour un test (par quotas de type).
+     *
+     * Accessible par tout utilisateur connecté.
      */
-    public function randomByTest($id_test)
+    public function randomByTest(int $id_test): JsonResponse
     {
-        $test = Test::findOrFail($id_test);
-        $allQuestions = collect();
-
         $quotas = [
             'QCM' => 5,
             'Réponse Courte' => 5,
             'Développement' => 5,
         ];
 
-        foreach ($quotas as $type => $limit) {            
-            $questionsByType = Question::with('options')
+        $questions = collect();
+
+        foreach ($quotas as $type => $limit) {
+            $typeQuestions = Question::with('options')
                 ->where('id_test', $id_test)
                 ->where('type_question', $type)
                 ->inRandomOrder()
                 ->take($limit)
                 ->get();
-                
-            $allQuestions = $allQuestions->merge($questionsByType);
-        }
-        
-        $finalQuestions = $allQuestions->shuffle();
 
-        return response()->json($finalQuestions->values());
-}
+            $questions = $questions->merge($typeQuestions);
+        }
+
+        return response()->json($questions->shuffle()->values());
+    }
 }

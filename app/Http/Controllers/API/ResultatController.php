@@ -3,41 +3,22 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\API\StoreResultatRequest;
 use App\Models\Resultat;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
-use Carbon\Carbon;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ResultatController extends Controller
 {
     /**
-     * Créer un résultat
+     * Créer un résultat avec fichier optionnel.
      */
-    public function store(Request $request)
+    public function store(StoreResultatRequest $request): JsonResponse
     {
-        $user = Auth::user();
-
-        if (!in_array($user->role, ['enseignant', 'admin'])) {
-            return response()->json(['message' => 'Accès refusé.'], 403);
-        }
-
-        $request->validate([
-            'id_groupe' => 'required|integer|exists:groupes,id_groupe',
-            'titre_resultat' => 'required|string|max:255',
-            'fichier_resultat' => 'nullable|file|mimes:pdf,doc,docx',
-        ]);
-
-         $path = null;
+        $path = null;
         if ($request->hasFile('fichier_resultat')) {
-            $file = $request->file('fichier_resultat');
-            $fileName = $file->getClientOriginalName();
-            $path = $file->storeAs(
-                'resultats', 
-                $fileName,
-                'public'
-            );
+            $path = $request->file('fichier_resultat')
+                ->storeAs('resultats', $request->file('fichier_resultat')->getClientOriginalName(), 'public');
         }
 
         $resultat = Resultat::create([
@@ -50,79 +31,58 @@ class ResultatController extends Controller
     }
 
     /**
-     * Récupérer les résultats d’un groupe
+     * Résultats d'un groupe.
      */
-    public function getByGroupe($id_groupe)
+    public function getByGroupe(int $id_groupe): JsonResponse
     {
-        $user = Auth::user();
-
-            $resultats = Resultat::where('id_groupe', $id_groupe)
-                ->get();
-
-                return response()->json($resultats);
-    }
-
-    /**
-     * Récupérer tous les résultats
-     */
-    public function getAll()
-    {
-        $user = Auth::user();
-
-        if ($user->role !== 'admin') {
-            return response()->json(['message' => 'Accès refusé.'], 403);
-        }
-
-        $resultats = Resultat::with(['groupe'])->get();
+        $resultats = Resultat::where('id_groupe', $id_groupe)->get();
         return response()->json($resultats);
     }
 
     /**
-     * Supprimer un résultat
+     * Tous les résultats (admin uniquement, middleware vérifié dans le route).
      */
-    public function destroy($id)
+    public function getAll(): JsonResponse
     {
-        $user = Auth::user();
+        $resultats = Resultat::with('groupe')->get();
+        return response()->json($resultats);
+    }
+
+    /**
+     * Supprimer un résultat (admin uniquement).
+     */
+    public function destroy(int $id): JsonResponse
+    {
         $resultat = Resultat::find($id);
 
         if (!$resultat) {
             return response()->json(['message' => 'Résultat introuvable.'], 404);
         }
 
-        if ($user->role !== 'admin') {
-            return response()->json(['message' => 'Accès refusé.'], 403);
-        }
-
-        // Supprimer le fichier si existant
-        if ($resultat->fichier_resultat) {
-            Storage::disk('public')->delete($resultat->fichier_resultat);
-        }
-
+        $resultat->deleteFile();
         $resultat->delete();
 
         return response()->json(['message' => 'Résultat supprimé avec succès.']);
     }
 
     /**
-     * Télécharger un fichier résultat
+     * Télécharger le fichier d'un résultat.
      */
-    public function download($id)
+    public function download(int $id): JsonResponse
     {
         $resultat = Resultat::find($id);
 
         if (!$resultat) {
             return response()->json(['message' => 'Résultat non trouvé.'], 404);
         }
-        
-        $filePath = $resultat->fichier_resultat;
 
-        if (!$filePath || !Storage::disk('public')->exists($filePath)) {
+        if (!$resultat->fileExists()) {
             return response()->json(['message' => 'Fichier introuvable sur le disque.'], 404);
         }
 
         return Storage::disk('public')->download(
-            $filePath,
-            basename($filePath) 
+            $resultat->fichier_resultat,
+            basename($resultat->fichier_resultat)
         );
     }
 }

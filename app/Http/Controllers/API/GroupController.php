@@ -3,60 +3,47 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\API\StoreGroupRequest;
+use App\Http\Requests\API\UpdateGroupRequest;
 use App\Models\Group;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\JsonResponse;
 
 class GroupController extends Controller
 {
     /**
-     * Afficher tous les groupes
+     * Liste des groupes visibles (hors ADMIN).
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        $groups = Group::where('nom_groupe', '!=', 'ADMIN')->get();
+        $groups = Group::visible()->get();
         return response()->json($groups);
     }
 
     /**
-     * Afficher un groupe par ID
+     * Détail d'un groupe.
      */
-    public function show(Group $group)
+    public function show(Group $group): JsonResponse
     {
-        // $group = Group::findOrFail($id);
-
-        if (!$group) {
-            return response()->json(['message' => 'Groupe introuvable'], 404);
-        }
-
         return response()->json($group);
     }
 
     /**
-     * Créer un nouveau groupe (enseignant ou admin)
+     * Créer un groupe.
      */
-    public function store(Request $request)
+    public function store(StoreGroupRequest $request): JsonResponse
     {
-        $request->validate([
-            'nom_groupe' => 'required|string|max:255',
-            'description' => 'nullable|string',
-        ]);
-
-        $group = Group::create([
-            'nom_groupe' => $request->nom_groupe,
-            'description' => $request->description,
-        ]);
+        $group = Group::create($request->validated());
 
         return response()->json([
             'message' => 'Groupe créé avec succès',
-            'group' => $group
+            'group' => $group,
         ], 201);
     }
 
     /**
-     * Modifier un groupe (enseignant ou admin)
+     * Modifier un groupe (admin uniquement — les enseignants n'ont pas accès).
      */
-    public function update(Request $request, $id)
+    public function update(UpdateGroupRequest $request, int $id): JsonResponse
     {
         $group = Group::find($id);
 
@@ -64,33 +51,23 @@ class GroupController extends Controller
             return response()->json(['message' => 'Groupe introuvable'], 404);
         }
 
-        // Vérifie les permissions
-        if (Auth::user()->role === 'enseignant') {
-            return response()->json(['message' => 'Action non autorisée'], 403);
-        }
+        $group->update($request->validated());
 
-        $group->update([
-            'nom_groupe' => $request->nom_groupe ?? $group->nom_groupe,
-            'description' => $request->description ?? $group->description,
+        return response()->json([
+            'message' => 'Groupe modifié avec succès',
+            'group' => $group,
         ]);
-
-        return response()->json(['message' => 'Groupe modifié avec succès', 'group' => $group]);
     }
 
     /**
-     * Supprimer un groupe (enseignant ou admin)
+     * Supprimer un groupe (admin uniquement).
      */
-    public function destroy($id)
+    public function destroy(int $id): JsonResponse
     {
         $group = Group::find($id);
 
         if (!$group) {
             return response()->json(['message' => 'Groupe introuvable'], 404);
-        }
-
-        // Vérifie les permissions
-        if (Auth::user()->role === 'enseignant') {
-            return response()->json(['message' => 'Action non autorisée'], 403);
         }
 
         $group->delete();

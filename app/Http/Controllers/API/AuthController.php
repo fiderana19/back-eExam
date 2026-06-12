@@ -3,52 +3,42 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\API\RegisterRequest;
 use App\Models\Utilisateur;
-use App\Models\Group;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
-use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
+    /**
+     * Inscription d'un nouvel utilisateur.
+     *
+     * Crée un compte avec le rôle déterminé automatiquement
+     * à partir du groupe choisi. Le compte est en attente de validation.
+     */
+    public function register(RegisterRequest $request): JsonResponse
     {
-       $validator = Validator::make($request->all(), [
-            'nom' => 'required|string|max:255',
-            'email' => 'required|string|email|unique:utilisateurs,email',
-            'matricule' => 'required|string|min:7',
-            'password' => 'required|string|min:6',
-            'id_groupe' => 'required',
-        ]);
+        $data = $request->validated();
+        $data['password'] = Hash::make($data['password']);
+        $data['est_valider'] = false;
+        $data['role'] = Utilisateur::determineRoleFromGroup($data['id_groupe']);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $validated = $validator->validated();
-        $validated['password'] = Hash::make($validated['password']);
-        $validated['est_valider'] = false;
-        $group = Group::findOrFail($validated['id_groupe']);
-        if($group['nom_groupe'] === "ENSEIGNANT") {
-            $validated['role'] = 'enseignant';
-        } else {
-            $validated['role'] = 'etudiant';
-        }
-
-        $utilisateur = Utilisateur::create($validated);
+        $utilisateur = Utilisateur::create($data);
 
         return response()->json([
             'message' => 'Inscription réussie. En attente de validation par un administrateur.',
-            'utilisateur' => $utilisateur
+            'utilisateur' => $utilisateur,
         ], 201);
     }
 
-    public function login(Request $request)
+    /**
+     * Connexion d'un utilisateur.
+     *
+     * Vérifie les identifiants et que le compte est approuvé.
+     */
+    public function login(): JsonResponse
     {
-        $credentials = $request->only('email', 'password');
+        $credentials = request()->only('email', 'password');
 
         if (!$token = auth()->attempt($credentials)) {
             return response()->json(['message' => 'Identifiants invalides.'], 401);
@@ -63,39 +53,51 @@ class AuthController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
-            'utilisateur' => $user
+            'utilisateur' => $user,
         ]);
     }
 
-    public function show(Utilisateur $user)
+    /**
+     * Afficher un utilisateur par son ID (route model binding).
+     */
+    public function show(Utilisateur $user): JsonResponse
     {
         return response()->json([
             'id_groupe' => $user->id_utilisateur,
-            'nom'  => $user->nom,
-            'email'  => $user->email,
-            'matricule'  => $user->matricule,
-            'role'  => $user->role,
+            'nom' => $user->nom,
+            'email' => $user->email,
+            'matricule' => $user->matricule,
+            'role' => $user->role,
             'est_valider' => $user->est_valider,
             'nom_groupe' => $user->groupe->nom_groupe ?? 'Aucun groupe',
         ]);
     }
 
-    public function profile()
+    /**
+     * Profil de l'utilisateur connecté.
+     */
+    public function profile(): JsonResponse
     {
         return response()->json(auth()->user());
     }
 
-    public function logout()
+    /**
+     * Déconnexion (invalidation du token).
+     */
+    public function logout(): JsonResponse
     {
         auth()->logout();
         return response()->json(['message' => 'Déconnexion réussie.']);
     }
 
-    public function refresh()
+    /**
+     * Rafraîchir le token JWT.
+     */
+    public function refresh(): JsonResponse
     {
         return response()->json([
             'access_token' => auth()->refresh(),
-            'token_type' => 'bearer'
+            'token_type' => 'bearer',
         ]);
     }
 }

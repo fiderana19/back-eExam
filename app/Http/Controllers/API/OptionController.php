@@ -3,46 +3,43 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Requests\API\StoreOptionRequest;
 use App\Models\OptionQcm;
-use App\Models\Question;
+use Illuminate\Http\JsonResponse;
 
 class OptionController extends Controller
 {
-    // Créer une option
-    public function store(Request $request)
+    /**
+     * Créer une option QCM.
+     *
+     * Si l'option est correcte, la réponse correcte de la question
+     * est synchronisée automatiquement.
+     */
+    public function store(StoreOptionRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'id_question' => 'required|exists:questions,id_question',
-            'texte_option' => 'required|string',
-            'est_correcte' => 'required|boolean',
-        ]);
-
-        $option = OptionQcm::create($validated);
-        $question = Question::findOrFail($validated['id_question']);
-
-        if($option->est_correcte === true) {
-            $question->reponse_correcte = $validated['texte_option'];
-        }
-
-        $question->save();
+        $option = OptionQcm::create($request->validated());
+        $option->load('question');
+        $option->syncQuestionCorrectAnswer();
 
         return response()->json([
             'message' => 'Option créée avec succès.',
-            'data' => $option
+            'data' => $option,
         ], 201);
     }
 
-    // Récupérer les options par l’ID d’une question
-    public function getByQuestion($id_question)
+    /**
+     * Options d'une question.
+     */
+    public function getByQuestion(int $id_question): JsonResponse
     {
         $options = OptionQcm::where('id_question', $id_question)->get();
-
         return response()->json($options);
     }
 
-    // Supprimer une option
-    public function destroy($id)
+    /**
+     * Supprimer une option.
+     */
+    public function destroy(int $id): JsonResponse
     {
         $option = OptionQcm::find($id);
 

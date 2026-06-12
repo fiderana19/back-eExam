@@ -3,65 +3,72 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Utilisateur;
+use Illuminate\Http\JsonResponse;
 
 class AdminController extends Controller
 {
-
-    public function pendingUsers()
+    /**
+     * Liste des utilisateurs en attente de validation.
+     */
+    public function pendingUsers(): JsonResponse
     {
-        $utilisateurs = Utilisateur::where('est_valider', false)
-            ->whereIn('role', ['etudiant', 'enseignant'])
-            ->get();
+        $utilisateurs = Utilisateur::pending()->get();
 
         return response()->json([
             'message' => 'Liste des utilisateurs en attente de validation.',
-            'data' => $utilisateurs
+            'data' => $utilisateurs,
         ]);
     }
 
-    public function approveUser($id)
+    /**
+     * Approuver un utilisateur.
+     */
+    public function approveUser(int $id): JsonResponse
     {
         $utilisateur = Utilisateur::findOrFail($id);
 
-        if ($utilisateur->est_valider) {
+        if ($utilisateur->isApproved()) {
             return response()->json(['message' => 'Cet utilisateur est déjà validé.'], 400);
         }
 
-        $utilisateur->est_valider = true;
-        $utilisateur->save();
+        $utilisateur->approve();
 
         return response()->json([
             'message' => 'Utilisateur validé avec succès.',
-            'utilisateur' => $utilisateur
+            'utilisateur' => $utilisateur,
         ]);
     }
 
-    public function blockUser($id)
+    /**
+     * Bloquer (désactiver) un utilisateur.
+     */
+    public function blockUser(int $id): JsonResponse
     {
         $utilisateur = Utilisateur::findOrFail($id);
 
-        if (!$utilisateur->est_valider) {
-            return response()->json(['message' => 'Cet utilisateur est déjà bloqué.'], 400);
+        if (!$utilisateur->isApproved()) {
+            return response()->json(['message' => 'Cet utilisateur est déjà désactivé.'], 400);
         }
 
-        $utilisateur->est_valider = false;
-        $utilisateur->save();
+        $utilisateur->block();
 
         return response()->json([
-            'message' => 'Utilisateur bloqué avec succès.',
-            'utilisateur' => $utilisateur
+            'message' => 'Utilisateur désactivé avec succès.',
+            'utilisateur' => $utilisateur,
         ]);
     }
 
-    public function allUsers()
+    /**
+     * Liste de tous les utilisateurs (hors admin).
+     */
+    public function allUsers(): JsonResponse
     {
-        $utilisateurs = Utilisateur::where('role', '!=', 'admin')->get();
+        $utilisateurs = Utilisateur::nonAdmin()->get();
 
         return response()->json([
             'message' => 'Liste de tous les utilisateurs.',
-            'data' => $utilisateurs
+            'data' => $utilisateurs,
         ]);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 class Group extends Model
 {
@@ -18,6 +19,8 @@ class Group extends Model
         'description',
     ];
 
+    // ─── Relations ────────────────────────────────────────────────
+
     public function utilisateurs()
     {
         return $this->hasMany(Utilisateur::class, 'id_groupe');
@@ -27,14 +30,28 @@ class Group extends Model
     {
         return $this->hasMany(Annonce::class, 'id_groupe');
     }
-        
+
     public function test()
     {
         return $this->hasMany(Test::class, 'id_groupe');
     }
-        
-    public function result()
+
+    // ─── Scopes ───────────────────────────────────────────────────
+
+    public function scopeVisible(Builder $query): void
     {
-        return $this->hasMany(Result::class, 'id_groupe');
+        $query->where('nom_groupe', '!=', 'ADMIN');
+    }
+
+    // ─── Vérifications ────────────────────────────────────────────
+
+    public function isAdminGroup(): bool
+    {
+        return $this->nom_groupe === 'ADMIN';
+    }
+
+    public function isEnseignantGroup(): bool
+    {
+        return $this->nom_groupe === 'ENSEIGNANT';
     }
 }
