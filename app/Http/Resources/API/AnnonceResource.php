@@ -15,7 +15,7 @@ class AnnonceResource extends JsonResource
             'id_groupe' => $this->id_groupe,
             'titre_annonce' => $this->titre_annonce,
             'texte_annonce' => $this->texte_annonce,
-            'created_at' => $this->created_at,
+            'creation_annonce' => $this->creation_annonce,
             'utilisateur' => $this->whenLoaded('utilisateur', fn() => [
                 'id_utilisateur' => $this->utilisateur->id_utilisateur,
                 'nom' => $this->utilisateur->nom,

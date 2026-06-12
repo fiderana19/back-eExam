@@ -63,13 +63,14 @@ class AuthController extends Controller
     public function show(Utilisateur $user): JsonResponse
     {
         return response()->json([
-            'id_groupe' => $user->id_utilisateur,
+            'id_utilisateur' => $user->id_utilisateur,
             'nom' => $user->nom,
             'email' => $user->email,
             'matricule' => $user->matricule,
             'role' => $user->role,
             'est_valider' => $user->est_valider,
-            'nom_groupe' => $user->groupe->nom_groupe ?? 'Aucun groupe',
+            'id_groupe' => $user->id_groupe,
+            'nom_groupe' => $user->groupe?->nom_groupe ?? 'Aucun groupe',
         ]);
     }
 

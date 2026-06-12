@@ -69,9 +69,9 @@ Route::middleware(['auth:api'])->prefix('tests')
     // Gestion — enseignant + admin uniquement
     Route::middleware('role:enseignant,admin')->group(function () {
         Route::post('/', 'store')                       ->name('tests.store');
-        Route::put('{id}', 'update')                    ->name('tests.update');
-        Route::put('/launch/{id}', 'updateStartTime')   ->name('tests.updateStartTime');
-        Route::delete('{id}', 'destroy')                ->name('tests.destroy');
+        Route::put('{test}', 'update')                  ->name('tests.update');
+        Route::put('/launch/{test}', 'updateStartTime') ->name('tests.updateStartTime');
+        Route::delete('{test}', 'destroy')              ->name('tests.destroy');
     });
 });
 

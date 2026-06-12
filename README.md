@@ -1,61 +1,369 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# E-Exam API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Laravel 12 REST API backend for an online examination platform.  
+Supports three roles — **Admin**, **Teacher** (Enseignant), **Student** (Étudiant) — with JWT-based authentication, QCM/essay question support, automated correction, and result export.
 
-## About Laravel
+## Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Multi‑role auth** — register, login, JWT refresh, profile
+- **Group management** — organise students into classes
+- **Test lifecycle** — create → launch (timer starts) → student submits → auto/manual correction → results
+- **Question types** — QCM (single/multiple choice), short answer, essay / development
+- **Student attempts** — per‑test timing, auto‑save, submission tracking
+- **Auto‑correction** — QCM and short‑answer questions scored automatically; essay questions wait for teacher review
+- **Announcements** — publish per‑group updates
+- **Result export** — upload / download result files (PDF, CSV, etc.)
+- **Admin console** — approve / block users, view all tests, manage results
+- **CLI tool** — `db:anonymize` command to replace real user data with fakes (optional backup)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Tech Stack
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Layer       | Technology                                      |
+|-------------|-------------------------------------------------|
+| Framework   | Laravel 12                                      |
+| Language    | PHP ^8.2                                        |
+| Database    | MySQL 8+ (or compatible)                        |
+| Auth        | JWT (`php-open-source-saver/jwt-auth`)          |
+| Testing     | PHPUnit 11                                      |
+| Assets      | Vite + TailwindCSS v4 (minimal, not the main UI) |
 
-## Learning Laravel
+> The front‑end companion (React + TypeScript) lives in a separate repository.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Prerequisites
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- PHP **^8.2**
+- Composer **^2**
+- MySQL **8+**
+- Node.js + npm (for asset building)
+- Extensions: `BCMath`, `Ctype`, `JSON`, `Mbstring`, `OpenSSL`, `PDO`, `Tokenizer`, `XML`, `pdo_mysql`
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Installation
 
-## Laravel Sponsors
+```bash
+# 1. Clone the repository
+git clone <repo-url> back-eExam
+cd back-eExam
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+# 2. Install PHP dependencies
+composer install
 
-### Premium Partners
+# 3. Environment configuration
+cp .env.example .env
+php artisan key:generate
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# 4. Configure your database in .env (see Configuration section below)
+#    Then run:
+php artisan jwt:secret      # generate JWT signing key
 
-## Contributing
+# 5. Run migrations and seed demo data
+php artisan migrate
+php artisan db:seed --class=SimulationSeeder
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# 6. Build front-end assets (optional — only needed if you use the Blade views)
+npm install && npm run build
 
-## Code of Conduct
+# 7. Start the development server
+php artisan serve
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+The API will be available at `http://localhost:8000/api`.
 
-## Security Vulnerabilities
+## Configuration
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### `.env` key settings
+
+| Variable         | Description                          | Example                        |
+|------------------|--------------------------------------|--------------------------------|
+| `APP_URL`        | Base URL for the API                 | `http://localhost:8000`        |
+| `DB_CONNECTION`  | Database driver                      | `mysql`                        |
+| `DB_HOST`        | Database host                        | `127.0.0.1`                    |
+| `DB_PORT`        | Database port                        | `3306`                         |
+| `DB_DATABASE`    | Database name                        | `eexam`                        |
+| `DB_USERNAME`    | Database user                        | `root`                         |
+| `DB_PASSWORD`    | Database password                    | *(your password)*              |
+| `JWT_SECRET`     | JWT signing key (generated)          | *(run `php artisan jwt:secret`)* |
+| `JWT_ALGO`       | JWT algorithm                        | `HS256`                        |
+| `JWT_TTL`        | Access token lifetime (minutes)      | `60`                           |
+| `JWT_REFRESH_TTL`| Refresh token lifetime (minutes)     | `20160` (14 days)              |
+
+### Authentication guard
+
+The default guard is `api` with the `jwt` driver.  
+All protected routes use the `auth:api` middleware.
+
+Role‑based access uses the custom `role` middleware:
+
+```php
+// Examples (from routes/api.php)
+Route::middleware(['auth:api', 'role:admin'])->group(...);
+Route::middleware(['auth:api', 'role:enseignant,admin'])->group(...);
+```
+
+## API Endpoints
+
+### Auth (`/api/auth`)
+
+| Method | URI                          | Auth     | Description              |
+|--------|------------------------------|----------|--------------------------|
+| POST   | `/api/auth/register`         | Public   | Register a new user      |
+| POST   | `/api/auth/login`            | Public   | Login                    |
+| GET    | `/api/auth/profile`          | Auth     | Current user profile     |
+| POST   | `/api/auth/logout`           | Auth     | Logout (invalidate token)|
+| POST   | `/api/auth/refresh`          | Auth     | Refresh JWT token        |
+| GET    | `/api/auth/{user}`           | Auth     | Show a specific user     |
+
+### Admin (`/api/admin`)
+
+| Method | URI                                    | Auth       | Description              |
+|--------|----------------------------------------|------------|--------------------------|
+| GET    | `/api/admin/users`                     | Admin      | List all users           |
+| GET    | `/api/admin/users/pending`             | Admin      | List pending approvals   |
+| POST   | `/api/admin/users/approve/{id}`        | Admin      | Approve a user           |
+| POST   | `/api/admin/users/block/{id}`          | Admin      | Block a user             |
+
+### Groups (`/api/groupes`)
+
+| Method | URI                      | Auth           | Description             |
+|--------|--------------------------|----------------|-------------------------|
+| GET    | `/api/groupes`           | Public         | List all groups         |
+| GET    | `/api/groupes/{group}`   | Public         | Show a group            |
+| POST   | `/api/groupes`           | Auth           | Create a group          |
+| PUT    | `/api/groupes/{id}`      | Auth           | Update a group          |
+| DELETE | `/api/groupes/{id}`      | Auth           | Delete a group          |
+
+### Tests (`/api/tests`)
+
+| Method | URI                                         | Auth       | Description                  |
+|--------|---------------------------------------------|------------|------------------------------|
+| GET    | `/api/tests/{test}`                         | Auth       | Show a test                  |
+| GET    | `/api/tests/groupe/{id_groupe}`             | Auth       | Tests for a group            |
+| GET    | `/api/tests/user/{id_utilisateur}`          | Auth       | Tests created by a user      |
+| GET    | `/api/tests/all_corrected`                  | Auth       | All corrected tests          |
+| GET    | `/api/tests/all_corrected/admin`            | Admin      | Corrected tests (admin view) |
+| GET    | `/api/tests/results/{id_test}`              | Auth       | Results / stats for a test   |
+| GET    | `/api/tests/need_correction/{id}`           | Auth       | Tests needing manual grading |
+| POST   | `/api/tests`                                | Teacher+   | Create a test                |
+| PUT    | `/api/tests/{test}`                         | Teacher+   | Update a test                |
+| PUT    | `/api/tests/launch/{test}`                  | Teacher+   | Launch a test (starts timer) |
+| PUT    | `/api/tests/finish/{test}`                  | Auth       | Finish a test                |
+| DELETE | `/api/tests/{test}`                         | Teacher+   | Delete a test                |
+
+> `Teacher+` = routes that require the `role:enseignant,admin` middleware.
+
+### Questions (`/api/questions`)
+
+| Method | URI                                        | Auth       | Description                    |
+|--------|--------------------------------------------|------------|--------------------------------|
+| GET    | `/api/questions/{question}`                | Auth       | Show a question                |
+| GET    | `/api/questions/test/{id_test}`            | Auth       | All questions for a test       |
+| GET    | `/api/questions/test/random/{id_test}`     | Auth       | Random subset for a test       |
+| POST   | `/api/questions`                           | Teacher+   | Create a question              |
+| PUT    | `/api/questions/{id}`                      | Teacher+   | Update a question              |
+| DELETE | `/api/questions/{id}`                      | Teacher+   | Delete a question              |
+
+### Options (`/api/options`)
+
+| Method | URI                                      | Auth       | Description                |
+|--------|------------------------------------------|------------|----------------------------|
+| GET    | `/api/options/question/{id_question}`    | Auth       | Options for a QCM question |
+| POST   | `/api/options`                           | Teacher+   | Create an option           |
+| DELETE | `/api/options/{id}`                      | Teacher+   | Delete an option           |
+
+### Tentatives (`/api/tentatives`)
+
+| Method | URI                                        | Auth | Description                    |
+|--------|--------------------------------------------|------|--------------------------------|
+| POST   | `/api/tentatives`                          | Auth | Start a test attempt           |
+| PUT    | `/api/tentatives/{id_tentative}`           | Auth | Update attempt (save progress) |
+| GET    | `/api/tentatives/test/{id_test}`           | Auth | Tentatives for a test          |
+| GET    | `/api/tentatives/responses/{id_test}`      | Auth | Responses for a test           |
+
+### Responses (`/api/reponses`)
+
+| Method | URI                                      | Auth | Description                    |
+|--------|------------------------------------------|------|--------------------------------|
+| POST   | `/api/reponses`                          | Auth | Submit a response              |
+| PUT    | `/api/reponses/{id}/texte`               | Auth | Update response text           |
+| PUT    | `/api/reponses/corriger/{id}`            | Auth | Manually grade a response      |
+| GET    | `/api/reponses/non-corrigees`            | Auth | List uncorrected responses     |
+| GET    | `/api/reponses/test/{id_test}`           | Auth | Responses for a test           |
+| GET    | `/api/reponses/{id}`                     | Auth | Show a response                |
+
+### Announcements (`/api/annonces`)
+
+| Method | URI                                              | Auth | Description                           |
+|--------|--------------------------------------------------|------|---------------------------------------|
+| GET    | `/api/annonces/{annonce}`                        | Auth | Show an announcement                  |
+| GET    | `/api/annonces/groupe/{id_groupe}`               | Auth | Announcements for a group             |
+| GET    | `/api/annonces/groupe/{id_groupe}/dernieres`     | Auth | Latest announcements for a group      |
+| GET    | `/api/annonces/utilisateur/{id_utilisateur}`     | Auth | Latest announcements for a user       |
+| POST   | `/api/annonces`                                  | Auth | Create an announcement                |
+| PUT    | `/api/annonces/{id}`                             | Auth | Update an announcement                |
+| DELETE | `/api/annonces/{id}`                             | Auth | Delete an announcement                |
+
+### Results (`/api/resultats`)
+
+| Method | URI                                      | Auth     | Description                  |
+|--------|------------------------------------------|----------|------------------------------|
+| GET    | `/api/resultats`                         | Admin    | List all results             |
+| GET    | `/api/resultats/download/{id}`           | Auth     | Download a result file       |
+| GET    | `/api/resultats/groupe/{id_groupe}`      | Auth     | Results for a group          |
+| POST   | `/api/resultats`                         | Teacher+ | Create / upload a result     |
+| DELETE | `/api/resultats/{id}`                    | Admin    | Delete a result              |
+
+## Database Schema
+
+### Entity-relationship diagram
+
+```
+┌───────────┐       ┌──────────────┐
+│  groupes  │──1──N─│ utilisateurs │
+└───────────┘       └──────────────┘
+     │                     │
+     │                     │ N
+     │ 1                   │
+     ├───────N──────┐      │
+     │              │      │
+┌───────────┐  ┌──────┐  ┌───────────┐
+│  annonces │  │tests │  │ tentatives│
+└───────────┘  └──────┘  └───────────┘
+                    │           │
+                    │ 1         │ N
+                    │           │
+               ┌──────────┐  ┌──────────────────┐
+               │ questions│  │ reponses_etudiants│
+               └──────────┘  └──────────────────┘
+                    │
+                    │ 1
+                    │
+              ┌────────────┐
+              │ options_qcm│
+              └────────────┘
+
+┌───────────┐
+│ resultats │──N──1── groupes
+└───────────┘
+```
+
+### Key tables
+
+| Table              | Primary key         | Notes                                      |
+|--------------------|---------------------|--------------------------------------------|
+| `groupes`          | `id_groupe`         | Student groups / classes                   |
+| `utilisateurs`     | `id_utilisateur`    | Users (all roles); JWTSubject              |
+| `tests`            | `id_test`           | Status managed via `TestStatus` enum       |
+| `questions`        | `id_question`       | Type managed via `QuestionType` enum       |
+| `options_qcm`      | `id_option`         | QCM answer options (`est_correcte` flag)   |
+| `tentatives`       | `id_tentative`      | Student test attempts with timing          |
+| `reponses_etudiants`| `id_reponse`       | Per‑question responses; auto‑correctable   |
+| `annonces`         | `id_annonce`        | Group announcements                        |
+| `resultats`        | `id_resultat`       | Result file references                     |
+
+## Project Structure
+
+```
+back-eExam/
+├── app/
+│   ├── Console/
+│   │   └── Commands/
+│   │       └── AnonymizeData.php      # CLI: db:anonymize
+│   ├── Enums/
+│   │   ├── UserRole.php               # admin, enseignant, etudiant
+│   │   ├── TestStatus.php             # En attente, En cours, Terminé
+│   │   └── QuestionType.php           # qcm, reponse courte, developpement
+│   ├── Http/
+│   │   ├── Controllers/API/
+│   │   │   ├── AuthController.php
+│   │   │   ├── AdminController.php
+│   │   │   ├── TestController.php
+│   │   │   ├── QuestionController.php
+│   │   │   ├── OptionController.php
+│   │   │   ├── TentativeController.php
+│   │   │   ├── ReponseController.php
+│   │   │   ├── AnnonceController.php
+│   │   │   ├── ResultatController.php
+│   │   │   └── GroupController.php
+│   │   └── Middleware/
+│   │       └── RoleMiddleware.php     # role:admin, role:enseignant,admin
+│   ├── Models/
+│   │   ├── Utilisateur.php
+│   │   ├── Group.php
+│   │   ├── Test.php
+│   │   ├── Question.php
+│   │   ├── OptionQcm.php
+│   │   ├── Tentative.php
+│   │   ├── Reponse.php
+│   │   ├── Annonce.php
+│   │   └── Resultat.php
+│   └── Providers/
+│       └── AppServiceProvider.php
+├── bootstrap/
+│   └── app.php                        # Middleware registration
+├── config/
+│   ├── app.php
+│   ├── auth.php                       # JWT guard config
+│   ├── jwt.php                        # JWT settings (TTL, algo, etc.)
+│   └── ...
+├── database/
+│   ├── migrations/                    # 14 migration files
+│   └── seeders/
+│       ├── DatabaseSeeder.php
+│       └── SimulationSeeder.php       # Demo data (group, teacher, student, test)
+├── routes/
+│   └── api.php                        # All API route definitions
+└── tests/
+    ├── TestCase.php
+    ├── Unit/
+    │   ├── ExampleTest.php
+    │   └── EnumValuesTest.php
+    └── Feature/
+        └── ExampleTest.php
+```
+
+## Testing
+
+```bash
+# Run all tests
+php artisan test
+
+# Or via Composer script (includes config:clear)
+composer run test
+```
+
+The test suite covers enum value consistency and model casts.  
+Extend with feature tests for API endpoints.
+
+## Development Commands
+
+```bash
+# Start dev server + queue + log watcher + Vite hot‑reload
+composer run dev
+
+# Full first-time setup (composer install, .env, key:generate, migrate, npm)
+composer run setup
+```
+
+### CLI: Anonymize Data
+
+```bash
+# Replace real user names/emails with fake data
+php artisan db:anonymize
+
+# Backup original data to CSV first
+php artisan db:anonymize --backup
+```
+
+### Simulation Seeder
+
+The `SimulationSeeder` creates demo data:
+
+| Entity     | Details                                      |
+|------------|----------------------------------------------|
+| Group      | "Classe Test" (id=13)                        |
+| Teacher    | `ens0001@univ.fr` / password (id=10)         |
+| Student    | `etu001@univ.fr` / password (id=11)          |
+| Test       | "Test simulation ens0001" (id=1005, 5 QCMs) |
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is open‑sourced under the [MIT license](https://opensource.org/licenses/MIT).
